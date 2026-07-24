@@ -1,0 +1,12 @@
+\begin{tikzpicture}
+	\begin{pgfonlayer}{nodelayer}
+		\node [style=box] (0) at (0, 0) {$f$};
+		\node [style=none] (1) at (-2, 0) {};
+		\node [style=none] (2) at (2, 0) {};
+		\node [style=none] (4) at (-2, 0) {};
+	\end{pgfonlayer}
+	\begin{pgfonlayer}{edgelayer}
+		\draw (1.center) to (0);
+		\draw (0) to (2.center);
+	\end{pgfonlayer}
+\end{tikzpicture}

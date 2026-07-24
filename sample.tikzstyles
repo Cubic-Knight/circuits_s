@@ -1,0 +1,2 @@
+\tikzstyle{box}=[shape=rectangle, minimum width=0.5cm, minimum height=0.5cm, draw=black]
+\tikzstyle{medium box}=[shape=rectangle, minimum width=0.5cm, minimum height=1.5cm, draw=black]
