@@ -1,0 +1,7 @@
+\definecolor{zx_grey}{RGB}{211,211,211}
+\definecolor{zx_red}{RGB}{232,165,165}
+\definecolor{zx_green}{RGB}{216,248,216}
+\definecolor{dark-gray}{gray}{0.40}
+
+\usepackage{mathtools,stmaryrd,amssymb,amsfonts,nicefrac}
+\usepackage{bm}

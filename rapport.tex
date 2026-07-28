@@ -1,0 +1,529 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{bbold}
+\usepackage{stmaryrd}
+\usepackage[hidelinks]{hyperref}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{pgfplots}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{tikz}
+\usetikzlibrary{positioning,intersections}
+\usepackage{tikzit}
+\input{sample.tikzstyles}
+\input{quantum-circuits.tikzstyles}
+\input{quantum-circuits.tikzdefs}
+
+
+\pgfplotsset{compat=1.18}
+
+\newtheorem{definition}{Définition}[subsection]
+\newtheorem{theorem}[definition]{Théorème}
+\newtheorem{corollary}[definition]{Corollaire}
+\newtheorem{lemma}[definition]{Lemme}
+\newtheorem{property}[definition]{Propriété}
+\newtheorem{remark}[definition]{Remarque}
+\newtheorem{example}[definition]{Exemple}
+
+\title{Certificats pour les preuves d'équivalence de circuits avec Isabelle/HOL}
+\date{29 mai 2026}
+\author{Alexis Beaucourt}
+
+\newcommand{\tinyinput}[1]{\scalebox{0.44}{\input{#1}}}
+
+\def\prob#1{ \mathbb P \left( #1 \right) }
+\def\esp#1{ \mathbb E \left[ #1 \right] }
+\def\var#1{ \text{Var} \left( #1 \right) }
+
+\def\N{ \mathbb N }
+\def\R{ \mathbb R }
+
+\def\setcomp#1#2{ \left\{ #1 \, \middle| \, #2 \right\} }
+\def\e{\varepsilon}
+\def\leqv{\Longleftrightarrow}
+\def\id{ \mathrm{id} }
+\def\nf{ \mathrm{NF} }
+\def\pro#1{ \mathbf{PRO}_{ #1 } }
+\def\prop#1{ \mathbf{PROP}_{ #1 } }
+\def\dom{ \mathrm{dom} }
+\def\cod{ \mathrm{cod} }
+\def\clr#1{ \overset{=}{ #1 } }
+\def\clt#1{ \overset{+}{ #1 } }
+\def\clrt#1{ \overset{*}{ #1 } }
+
+% abstract potentiel
+% \tableofcontents
+% intro (etat de l'art & motivation & description contenu)
+% conclusion
+% remerciments (loria, veridis, encadrants, g5k)
+
+\begin{document}
+
+\maketitle
+
+\begin{figure}[ht]
+    \centering
+    \input{pic/first.tikz}
+    \caption{My graph.}
+\end{figure}
+
+\section{Définition des PRO/PROP}
+
+Chaque circuit $u$ possède un domaine $\dom(u) \in \N$ et un codomaine $\cod(u) \in \N$
+
+On définit les circuits de $\pro{\Sigma, \mathcal E}$ comme étant les circuits formés à partir des générateurs suivants:
+
+\input{pic/gen.tikz}
+
+Ainsi que les opérations suivantes:
+
+\input{pic/ops.tikz}
+
+Cependant, on quotiente le tout par les égalités de $\mathcal E$, en plus des égalités suivantes:
+
+
+\begin{figure}[t]
+    \fbox{\begin{minipage}{0.982\linewidth}\begin{center}
+        \vspace{-1em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.48\textwidth}
+            \begin{equation}\label{eq:seqidentity}
+                \begin{array}{ccccc}
+                    \id_n\fatsemi t&=&t&=&t\fatsemi\id_m\\[.4em]
+                    \tinyinput{fig/seqid_left.tikz}&=&\tinyinput{fig/seqid_mid.tikz}&=&\tinyinput{fig/seqid_right.tikz}
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.5em}
+        \begin{subfigure}{0.44\textwidth}
+            \begin{equation}\label{eq:seqassociativity}
+                \begin{array}{ccc}
+                    (t\fatsemi u)\fatsemi v&=&t\fatsemi(u\fatsemi v)\\[.4em]
+                    \tinyinput{fig/seqasso_left.tikz}&=&\tinyinput{fig/seqasso_right.tikz}
+                \end{array}
+            \end{equation}
+        \end{subfigure}\hspace{2em}
+        \begin{subfigure}{0.38\textwidth}
+            \begin{equation}\label{eq:parassociativity}
+                \begin{array}{ccc}
+                    (t\otimes u)\otimes v&=&t\otimes(u\otimes v)\\[.4em]
+                    \tinyinput{fig/parasso_left.tikz}&=&\tinyinput{fig/parasso_right.tikz}
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.5em}
+        \begin{subfigure}{0.30\textwidth}
+            \begin{equation}\label{eq:idinduct}
+                \begin{array}{ccc}
+                    \id_{n+m}&=&\id_{n}\otimes\id_{m}\\[.4em]
+                    \tinyinput{fig/idpar_left.tikz}&=&\tinyinput{fig/idpar_right.tikz}
+                \end{array}
+            \end{equation}
+        \end{subfigure}\hspace{2em}
+        \begin{subfigure}{0.40\textwidth}
+            \begin{equation}\label{eq:paridentity}
+                \begin{array}{ccccc}
+                    t\otimes \id_0&=&t&=&\id_0\otimes t\\[.4em]
+                    \tinyinput{fig/parid_left.tikz}&=&\tinyinput{fig/parid_mid.tikz}&=&\tinyinput{fig/parid_right.tikz}
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.5em}
+        \begin{subfigure}{0.57\textwidth}
+            \begin{equation}\label{eq:interchange}
+                \begin{array}{ccc}
+                    (u_1\fatsemi u_2)\otimes(v_1\fatsemi v_2)&=&(u_1\otimes v_1)\fatsemi(u_2\otimes v_2)\\[.4em]
+                    \tinyinput{fig/interchange_left.tikz}&=&\tinyinput{fig/interchange_right.tikz}
+                \end{array}
+            \end{equation}
+        \end{subfigure}\hspace{1em}
+        \begin{subfigure}{0.36\textwidth}
+            \begin{equation}\label{eq:emptysymmetry}
+                \begin{array}{ccccc}
+                    \sigma_{n,0}&=&\id_n&=&\sigma_{0,n}\\[.4em]
+                    \tinyinput{fig/s0_left.tikz}&=&\tinyinput{fig/s0_mid.tikz}&=&\tinyinput{fig/s0_right.tikz}
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.5em}
+        \begin{subfigure}{0.34\textwidth}
+            \begin{equation}\label{eq:involution}
+                \begin{array}{ccc}
+                    \sigma_{n,m}\fatsemi\sigma_{m,n}&=&\id_{n+m}\\[.4em]
+                    \tinyinput{fig/inv_left.tikz}&=&\tinyinput{fig/inv_right.tikz}
+                \end{array}
+            \end{equation}
+        \end{subfigure}\hspace{2em}
+        \begin{subfigure}{0.48\textwidth}
+            \begin{equation}\label{eq:naturality}
+                \begin{array}{ccc}
+                    (t\otimes\id_k)\fatsemi\sigma_{m,k}&=&\sigma_{n,k}\fatsemi(\id_k\otimes t)\\[.4em]
+                    \tinyinput{fig/pass_left.tikz}&=&\tinyinput{fig/pass_right.tikz}
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.5em}
+        \begin{subfigure}{0.86\textwidth}
+            \begin{equation}\label{eq:symmetryinduct}
+                \begin{array}{ccc}
+                    \sigma_{n+k,m+\ell}&=&(\id_n\otimes\sigma_{k,m}\otimes\id_\ell)\fatsemi(\sigma_{n,m}\otimes\sigma_{k,\ell})\fatsemi(\id_m\otimes\sigma_{n,\ell}\otimes\id_k)\\[.4em]
+                    \tinyinput{fig/swap_decomp_left.tikz}&=&\tinyinput{fig/swap_decomp_right.tikz}
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+        \vspace{0.2em}
+    \end{center}\end{minipage}}
+\end{figure}
+
+
+
+On peut ensuite définir les $\prop{\Sigma, \mathcal E}$ comme étant des $\pro{\Sigma \cup \Sigma_0, \mathcal E \cup \mathcal E_0}$, où $\Sigma_0$ contient:
+
+\input{pic/swp.tikz}
+
+Et les $\mathcal E_0$ sont les égalités:
+
+[insérer image]
+
+Pour le restant de ce rapport, on notera $\simeq$ la relation d'équivalence entre deux termes.
+
+\section{simp dans Isabelle}
+
+\subsection{en général}
+
+En Isabelle/HOL la tactique \verb|simp| permet de modifier (ou prouver) un but en appliquant des règles de réécriture. En particulier, \verb|simp| peut être invoquée sous plusieurs formes:
+\begin{itemize}
+    \item \verb|simp| utilise un ensemble de règles de réécriture par défaut. Cet ensemble est un mix de règles judicieusement choisies par les créateurs de bibliothèques et de règles automatiquement générées par des mots clés comme \verb|function|, \verb|fun|, \verb|inductive|, etc.
+    \item \verb|(simp add: regle1 regle2)| permet à l'utilisateur de rajouter ses propres règles de réécriture dans l'ensemble utilisé par \verb|simp|
+    \item \verb|(simp only: regle1 regle2)| permet à l'utilisateur de ne pas utiliser les règles par défaut, mais seulement celles qu'il choisit
+    \item \verb|(simp cong: regle1 regle2)| permet à l'utilisateur de rajouter des règles de congruence
+\end{itemize}
+
+Les options \verb|add|, \verb|only| et \verb|cong| peuvent être utilisées dans la même invocation de \verb|simp|, par exemple \verb|(simp only: regle1 cong: regle2)| n'utilise que 2 règles, dont une de congruence.
+
+Une règle de réécriture est un lemme (qui doit être démontré dans Isabelle) sous la forme $P_1 \implies \cdots \implies P_n \implies A = B$. Il représente la règle $A \to B \text{ si } P_1, \ldots, P_n$
+
+En pratique, le simplificateur va essayer de prover les conditions $P_1, \ldots, P_n$ en s'appelant récursivement sur chacune des conditions, et réécrire $A$ en $B$ une fois qu'il a réussi. S'il n'arrive pas à prouver une des conditions (parce qu'il n'a pas assez de règles ou bien parce que la condition est fausse), alors il abandonne l'utilisation de cette règle et en essaye d'autres.
+
+Une règle de congruence est un lemme de la forme $P_1 \implies \cdots \implies P_n \implies f(x) = f(y)$. Elle s'applique avant les règles de réécriture, dès que le simplificateur reconnaît que les deux côtés de l'égalité commencent par $f$. De plus, les règles de congruence se distinguent des règles de réécriture par le fait qu'il ne s'agit pas ici de remplacer $f(x)$ par $f(y)$, mais de prouver $f(x) = f(y)$.
+
+Par exemple, si $f$ est une fonction paire, on peut avoir la règle de congruence $x = -y \implies f(x) = f(y)$, ce qui permet au simplificateur de démontrer $f(-3) = f(3)$
+
+Si le simplificateur arrive à un terme sur lequel il n'y a pas de règles applicables (ou les seules règles potentiellement applicables ont une condition dont la preuve a échoué), alors il s'arrête. Si de plus il s'arrête sur un terme de la forme \verb|t = t|, alors il considère son but comme démontré.
+
+
+Pour la certification d'équivalence de circuits, il est judicieux d'utiliser \verb|simp|, car notre forme normale est calculée à l'aide de règles de réécriture. Cependant, les règles de réécriture indiquées ci-dessus ne sont pas suffisantes pour le bon fonctionnement de \verb|simp|. En effet, il lui faut aussi:
+
+\begin{itemize}
+    \item des règles pour évaluer certaines fonctions ($\dom, \cod, \ldots$)
+    \item des règles pour faire de l'arithmétique sur les entiers naturels
+    \item des règles pour traiter des inégalités sur les entiers naturels
+    \item des règles pour évaluer des opérations booléennes
+\end{itemize}
+
+Il est aussi nécessaire d'écrire les règles d'une manière appropriée pour \verb|simp|: une règle comme $f(n+1) = g(n)$ ne s'applique pas sur $f(13)$, mais sur $f(12+1)$. Il convient de prendre à la place une règle comme $n \ge 1 \implies f(n) = g(n-1)$
+
+Il est également important de prendre en compte la difficulté posée par la soustraction sur les entiers naturels. En effet, si $n \ge m$, $m - n$ est définit comme étant $0$ Par exemple, \verb|1 - 2 = 0| peut être démontré en Isabelle. Il faut donc exprimer $n - m$ par \verb|nat (int n - int m)| (on passe par les entiers relatifs)
+
+\subsection{avec les PRO}
+
+\subsection{avec les Perm}
+
+\section{benchmark}
+
+\subsection{Méthodologie}
+
+Pour tester la rapidité de certification de circuits, des circuits ont été générés. Pour cela un script qui génère des paires de circuits equivalents a été utilisé. Les paires ainsi générées sont ensuite classés par taille et regroupés en lots de 50 en 50 (c'est-à-dire un lot pour les tailles de 0 à 49, un pour les tailles de 50 à 99, etc...).
+
+La taille est définie par le nombre de $\otimes$ et de $\fatsemi$ dans les 2 circuits.
+
+Ensuite, sont générés pour chaque lot de taille un ensemble de 50 exemples en les tirant au hasard (avec remplacement).
+
+Isabelle est ensuite lancé sur les 50 exemples en même temps (ce qui permet à Isabelle de potentiellement paralléliser ses calculs) et le temps final d'éxécution est récupéré.
+
+Le script permettant de générer les circuits est un script aléatoire et ne permet pas de contrôler la taille de sortie des circuits. De plus, pour les très grands circuits, le script peut prendre beaucoup de temps. Pour cette raison, le nombre d'exemples générés dépend de la taille.
+
+Un des problèmes de cette méthode est que la précision de la mesure dépend beaucoup du nombre d'exemples générés: s'il y en a plus de 200, la répartition est proche de l'uniforme, mais lorsqu'il y en a moins que 10, des biais peuvent exister. Il faut donc s'attendre à ce que les tests soient moins précis lorque les circuits sont plus grands (les exemples étant plus longs à générer, on en possède moins)
+
+Un autre problème qui perturbe la mesure est que Isabelle a besoin de s'initialiser et de lire les fichiers qui établissent la théorie permettant de faire la preuve. Ceci prend un temps constant (car ces fichiers ne dépendent pas du circuit testé) qui devrait être assez peu significatif, puisqu'il n'y a qu'une seule étape d'initialisation pour les 50 exemples.
+
+Il est également important de noter qu'Isabelle a pu tourner en parallèle sur 8 threads, ce qui lui permet de traiter plusieurs circuits en même temps.
+
+Tous les exemples ont été lancés sur [TODO insérer nom ordi], effectués sans qu'il y ait d'autres processus en même temps, et tous les tests appartenant à une même famille ont été réalisés durant la même session.
+
+\subsection{PRO bench}
+
+Le nombre d'exemples générés chute très rapidement à partir de la taille 500, du fait du temps de génération.
+
+Le graphe ci-dessous montre le nombre d'exemples générés en fonction de la catégorie. Pour aider à la lisibilité, l'axe des ordonnées est ici logarithmique.
+
+\begin{tikzpicture}
+    \begin{semilogyaxis}[
+        title={Nombre d'exemples générés par catégorie},
+        xlabel={Catégorie},
+        ylabel={Nombre d'exemples générés},
+        xmin=-20, xmax=620,
+        ymin=0.7, ymax=400,
+        xtick={0,50,100,150,200,250,300,350,400,450,500,550,600},
+        ytick={1,10,100},
+        % legend pos=north west,
+        ymajorgrids=true,
+        grid style=dashed,
+        height=7.5cm,
+        width=0.9\linewidth
+    ]
+
+    \addplot[
+        color=blue,
+        mark=square,
+    ]
+    coordinates {
+        (0,182)(50,200)(100,221)(150,196)(200,176)(250,130)(300,112)
+        (350,105)(400,66)(450,71)(500,23)(550,4)(600,1)
+    }
+    [pos segment=0,yshift=10pt,font=\footnotesize]
+        node [pos=0/12] {182}
+        node [pos=1/12] {200}
+        node [pos=2/12] {221}
+        node [pos=3/12] {196}
+        node [pos=4/12] {176}
+        node [pos=5/12] {130}
+        node [pos=6/12] {112}
+        node [pos=7/12] {105}
+        node [pos=8/12] {66}
+        node [pos=9/12] {71}
+        node [pos=10/12] {23}
+        node [pos=11/12] {4}
+        node [pos=12/12] {1};
+        
+    \end{semilogyaxis}
+\end{tikzpicture}
+
+Le temps de calcul est ici également montré avec l'ordonnée logarithmique. Il est important de noter que la mesure pour la catégorie 600 est probablement imprécise, car on ne dispose que d'un seul exemple (le test s'est donc déroulé avec 50 copies du même exemple, ce qui peut ne pas être représentatif d'un échantillon uniforme).
+
+\begin{tikzpicture}
+    \begin{semilogyaxis}[
+        title={Temps de vérification par catégorie},
+        xlabel={Catégorie},
+        ylabel={Temps de vérification [s]},
+        xmin=-20, xmax=620,
+        ymin=7, ymax=2000,
+        xtick={0,50,100,150,200,250,300,350,400,450,500,550,600},
+        ytick={10,100,1000},
+        % legend pos=north west,
+        ymajorgrids=true,
+        grid style=dashed,
+        height=7.5cm,
+        width=0.9\linewidth
+    ]
+
+    \addplot[
+        color=blue,
+        mark=square,
+    ]
+    coordinates {
+        (0, 20.497)(50, 24.821)(100, 30.193)(150, 41.983)(200, 55.789)
+        (250, 81.608)(300, 109.642)(350, 120.251)(400, 169.195)
+        (450, 231.104)(500, 374.404)(550, 465.433)(600, 1630.060)
+    };
+        
+    \end{semilogyaxis}
+\end{tikzpicture}
+
+\subsection{Perm bench}
+
+Ici le nombre d'exemples chute pour les catégories supérieures à 650. Ce nombre est plus grand car il est plus simple de générer des circuits de type Perm que des circuits de type PRO.
+
+Comme le graphe précédent, les ordonnées sont ici logarithmiques.
+
+\begin{tikzpicture}
+    \begin{semilogyaxis}[
+        title={Nombre d'exemples générés par catégorie},
+        xlabel={Catégorie},
+        ylabel={Nombre d'exemples générés},
+        xmin=-20, xmax=770,
+        ymin=0.7, ymax=500,
+        xtick={0,50,100,150,200,250,300,350,400,450,500,550,600,650,700,750},
+        ytick={1,10,100},
+        % legend pos=north west,
+        ymajorgrids=true,
+        grid style=dashed,
+        height=7.5cm,
+        width=0.9\linewidth
+    ]
+
+    \addplot[
+        color=blue,
+        mark=square,
+    ]
+    coordinates {
+        (0,250)(50,235)(100,197)(150,205)(200,197)(250,132)(300,123)(350,104)
+        (400,83)(450,81)(500,56)(550,35)(600,21)(650,4)(700,2)(750,1)
+    }
+    [pos segment=0,yshift=10pt,font=\footnotesize]
+        node [pos=0/15] {250}
+        node [pos=1/15] {235}
+        node [pos=2/15] {197}
+        node [pos=3/15] {205}
+        node [pos=4/15] {197}
+        node [pos=5/15] {132}
+        node [pos=6/15] {123}
+        node [pos=7/15] {104}
+        node [pos=8/15] {83}
+        node [pos=9/15] {81}
+        node [pos=10/15] {56}
+        node [pos=11/15] {35}
+        node [pos=12/15] {21}
+        node [pos=13/15] {4}
+        node [pos=14/15] {2}
+        node [pos=15/15] {1};
+        
+    \end{semilogyaxis}
+\end{tikzpicture}
+
+Le temps de calcul pour les Perm semble ne pas croîte aussi vite que celui pour les PRO. En conséquence, le graphe ci dessous est donné avec l'axe des ordonnées linéaire et non logarithmique.
+
+Il est important de noter que les points pour les catégories 650, 700 et 750 ne sont probablement pas représentatifs d'un échantillion uniforme, vu leur faible nombre d'exemples.
+
+\begin{tikzpicture}
+    \begin{axis}[
+        title={Temps de vérification par catégorie},
+        xlabel={Catégorie},
+        ylabel={Temps de vérification [s]},
+        xmin=-20, xmax=770,
+        ymin=-50, ymax=1050,
+        xtick={0,50,100,150,200,250,300,350,400,450,500,550,600,650,700,750},
+        ytick={0,100,200,300,400,500,600,700,800,900,1000},
+        % legend pos=north west,
+        ymajorgrids=true,
+        grid style=dashed,
+        height=7.5cm,
+        width=0.9\linewidth
+    ]
+
+    \addplot[
+        color=blue,
+        mark=square,
+    ]
+    coordinates {
+        (0, 16.950)(50, 80.245)(100, 65.545)(150, 146.935)
+        (200, 241.864)(250, 267.352)(300, 296.208)(350, 361.194)
+        (400, 430.655)(450, 466.028)(500, 557.132)(550, 666.792)
+        (600, 828.486)(650, 843.943)(700, 805.531)(750, 989.654)
+    };
+        
+    \end{axis}
+\end{tikzpicture}
+
+\section{PROP}
+
+Afin d'espérer pouvoir obtenir un résultat similaire sur les $\prop{\Sigma, \varnothing}$, on veut définir une forme normale.
+
+\subsection{Numérotation}
+
+Pour aider à définir une forme normale, on va ajouter des informations à notre circuit.
+
+Cela permet de donner des informations globales sur le circuit de manière locale.
+
+\begin{remark}
+    On peut voir le circuit comme un graphe (plus précisément un DAG)
+\end{remark}
+
+\begin{theorem}
+    $t_1 \simeq t_2 \leqv G(t_1) = G(t_2)$
+\end{theorem}
+
+\begin{corollary}
+    Toute quantité qui ne dépend que de $G(t)$ est invariante pour toute la classe d'équivalence de $t$
+\end{corollary}
+
+\begin{definition}
+    On définit la profondeur $\rho(u)$ d'un générateur $u \in \Sigma$ dans un circuit comme étant le nombre maximal de générateur traversés vers la gauche.
+
+    Autrement dit, si les générateurs précédant $v$ sont $u_1, \ldots u_n$, alors
+    \[ \rho(v) = \begin{cases}
+        0 & \text{si } n=0\\
+        1+\max_{1\le i\le n} \rho(u_i) & \text{sinon}
+    \end{cases} \]
+\end{definition}
+
+\begin{lemma}
+    Comme la notion de "précéder" ne dépend que du graphe sous-jacent, la profondeur ainsi définie est indépendante de l'élément de la classe d'équivalence choisie.
+\end{lemma}
+
+\begin{definition}
+    On note la "vraie profondeur" $p(v)$ d'une porte (c'est-à-dire un générateur ou bien un swap) par l'équation suivante:
+    \[
+    p(v) = \begin{cases}
+        2 \times \rho(v) + 1 & \text{si } v \text{ est un générateur}\\
+        2 \times \max_{1\le i\le n} \rho(u_i) & \text{si } v \text{ est un swap et } (u_i)_i \text{ les générateurs le précédant}
+    \end{cases}
+    \]
+\end{definition}
+
+\begin{definition}
+    On définit la priorité d'un fil en faisant un parcours en profondeur sur le graphe. On obtient ainsi un ordre topologique sur les fils.
+\end{definition}
+
+\begin{lemma}
+    Comme cet ordre ne dépend que du graphe sous-jacent, il est équivalent pour tout élément de la classe d'équivalence.
+\end{lemma}
+
+\begin{lemma}
+    On peut donc munir un circuit des profondeurs et des priorités sans toutefois modifier les classes d'équivalence.
+\end{lemma}
+
+\begin{definition}
+    On dit d'un circuit (annoté) est en forme normale si et seulement si:
+    \begin{itemize}
+        \item il est "découpé en couches" selon la profondeur $p$
+        \item au sein de chaque couche, les portes sont organisées selon la profondeur de leurs fils de sortie
+    \end{itemize}
+\end{definition}
+
+\begin{lemma}
+    La forme normale existe, et est unique.
+\end{lemma}
+\begin{proof}
+    Existence par correction (DFS) et construction
+
+    Unicité par ordre total des priorités
+\end{proof}
+
+\begin{definition}
+    On note $\nf$ la procédure qui transforme t en forme normale.
+\end{definition}
+
+\begin{property}
+    $\nf(\nf(t)) = \nf(t)$
+\end{property}
+
+\begin{lemma}
+    $t_1 \simeq t_2 \leqv \nf(t_1) = \nf(t_2)$
+\end{lemma}
+\begin{proof}
+    $NF$ ne dépend que du graphe sous-jacent et est unique.
+\end{proof}
+
+\begin{remark}
+    Comme les $\prop{\Sigma}$ sont des $\pro{\Sigma \cup \Sigma_0}$ (avec des générateurs supplémentaires), on peut tout à fait appliquer la fonction de normalisation des $\pro{\Sigma \cup \Sigma_0}$ sur les $\prop{\Sigma}$, ce qui donne un circuit séparé en couches.
+
+    Celà revient, en outre, à considérer que les swap sont des générateurs quelconques (des boîtes noires, en quelque sorte) et à effectuer le processus de normalisation des $\pro{\Sigma \cup \Sigma_0}$ dessus.
+\end{remark}
+
+\begin{definition}
+    On pose le système de réécriture suivant sur les circuits numérotés
+\end{definition}
+
+\end{document}

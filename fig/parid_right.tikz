@@ -1,0 +1,18 @@
+\begin{tikzpicture}
+	\begin{pgfonlayer}{nodelayer}
+		\node [style=none] (0) at (-1, -1) {};
+		\node [style=none] (1) at (1, -1) {};
+		\node [style=gate] (4) at (0, -1) {$t$};
+		\node [style=none] (5) at (0.75, 1) {};
+		\node [style=none] (6) at (0.75, 0) {};
+		\node [style=none] (7) at (-0.75, 1) {};
+		\node [style=none] (8) at (-0.75, 0) {};
+	\end{pgfonlayer}
+	\begin{pgfonlayer}{edgelayer}
+		\draw (0.center) to (1.center);
+		\draw [style=greyetc] (5.center) to (7.center);
+		\draw [style=greyetc] (7.center) to (8.center);
+		\draw [style=greyetc] (8.center) to (6.center);
+		\draw [style=greyetc] (6.center) to (5.center);
+	\end{pgfonlayer}
+\end{tikzpicture}
