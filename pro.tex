@@ -1,0 +1,306 @@
+%!TEX root = main.tex
+
+\section{Term Rewriting in a State-and-effect-free PRO}\label{sec:pro}
+
+In this section we fix $\Sigma$ a state-and-effect-free set of generators, meaning that each generator $g\in\Sigma$ satisfies $\textup{dom}(g)>0$ and $\textup{cod}(g)>0$. This assumption enables termination and confluence of our TRS while remaining sufficiently general for a wide range of practical applications. We consider $\cat{PRO}_\Sigma$ and solve its underlying diagrammatic equivalence problem: given two terms $t_1,t_2\in\terms{\Sigma}$ such that $\cat{PRO}_\Sigma\vdash t_1=t_2$, how to effectively rewrite $t_1$ into $t_2$ using the coherence equations? To do so, we introduce a normal form and an associated rewriting system that we prove to be terminating and confluent.
+
+
+\subsection{Normal Form and Preprocessing}
+
+We define a \emph{pre-normal form} as a sequence of layers, a layer being a single generator $g$ sandwiched between identities: $\layer{k}{\ell}{g} \defeq \textup{id}_{k}\otimes (g\otimes\textup{id}_{\ell})$ where $k,\ell\in \mathbb N$ and $g\in \Sigma$. We say that $g$ has  \emph{upper width}  $k$, \emph{lower width} $\ell$, and \emph{height} $k+\text{dom}(g)$. 
+
+A term $\layers{ks}{\ell s}{gs}$, defined as follows, is a non-empty sequence of $p>0$ layers, characterized by the list $gs\in\Sigma^p$  of the associated generators and the lists $ks,\ell s\in\N^p$ of their corresponding upper  and lower widths. 
+\begin{gather*}
+    \layers{k\first ks}{\ell\first \ell s}{g\first gs} \defeq \begin{cases} 
+        \layer{k}{\ell}{g} &\text{if $ks=\ell s=gs = \emptylist$}\\
+        \layer{k}{\ell}{g}\semicolon \layers{ks}{\ell s}{gs} &\text{otherwise}
+    \end{cases}
+\end{gather*}
+
+Notice that to guarantee that $\layers{ks}{\ell s}{gs}$ is well-defined, we assume throughout this paper that the three lists $ks$, $\ell s$ and $gs$ have the same size $p$ and that $\forall i\in \natset{p-1}$, $ks_i+\textup{cod}(gs_i) + \ell s_i = ks_{i+1}+\textup{dom}(gs_{i+1}) + \ell s_{i+1}$, to ensure that the layers have appropriate domains and codomains. 
+
+Notice that, according to the coherence equations, two layers in sequence may commute when the outputs of the first generator are not connected to any inputs of the second generator. To obtain a \emph{normal form}, we must fix an order for the commuting layers. To do so, we require the upper width of a generator to be smaller than the height of the next one, since the two layers can be commuted otherwise. This leads to the following definition of normal forms.
+
+\begin{definition}[normal form]\label{def:nf}
+    The set $\nf{\Sigma}$ of terms in \emph{normal form} is inductively defined as follows: $\textup{id}_n$ and $\layer{k}{\ell}{g}$ are in normal form ; and $\layers{k\first ks}{\ell\first \ell s}{g\first gs}$ is in normal form if $\layers{ks}{\ell s}{gs}$ is in normal form while satisfying $k<ks_1+\textup{dom}(gs_1)$.
+\end{definition}
+
+\begin{example} 
+    For instance, if $\Sigma=\{A:1\to1,B:2\to2\}$, the term $t=((A\semicolon\textup{id}_1)\otimes ((A\otimes A)\semicolon B))\semicolon(B\otimes A)\in\terms{\Sigma}$ is equivalent to $\layers{[0,1,2,1,0,2]}{[2,1,0,0,1,0]}{[A,A,A,B,B,A]}$ which is in normal from. These terms can be depicted as follows.
+    \begin{gather*}
+        \tf{nf_example_right} = \tf{nf_example_left}
+    \end{gather*}
+\end{example}
+
+We introduce a procedure to turn any term into its normal form, relying on two new operators $\bullet$ and $\star$ allowing to compute the resulting normal form of a sequential and a parallel composition of two normal forms respectively. While the definition of $\star$ is straightforward, the definition of $\bullet$ requires mixing the layers of the two normal forms in order to satisfy the conditions explained in \cref{def:nf}.
+\begin{definition}[normalizing map]\label{def:nfmap}
+    Let ${\textup{NF}:\terms{\Sigma}\to \nf{\Sigma}}$ be the \emph{normalizing map} that assigns to each term $t:n\to m$ its normal form $\textup{NF}(t) : n\to m$, inductively defined as
+    \vspace{-0.5em}
+    \begin{gather*}
+        \textup{NF}(\textup{id}_n) \defeq \textup{id}_n \hspace{3em}
+        \textup{NF}(g) \defeq \layer{0}{0}{g} \\
+        \textup{NF}(u\semicolon v) \defeq \textup{NF}(u)\bullet\textup{NF}(v) \hspace{3em}
+        \textup{NF}(u\otimes v) \defeq \textup{NF}(u)\star\textup{NF}(v)
+    \end{gather*}
+    where $\bullet$ and $\star$ are inductively defined as follows, where $c=\textup{cod}(\layers{ks}{\ell s}{gs})$ and $d = \textup{dom}(\layers{rs}{ss}{hs})$.
+    \begin{align*}
+        \textup{id}_n \bullet \textup{id}_n&\defeq  \textup{id}_n \\[0.2em]
+        \textup{id}_n \bullet \layers{ks}{\ell s}{gs} &\defeq \layers{ks}{\ell s}{gs} \\[0.2em]
+        \layers{ks}{\ell s}{gs}  \bullet  \textup{id}_n&\defeq \layers{ks}{\ell s}{gs} \\[0.2em]
+        \layer{k'}{\ell'}{g'}\bullet \layers{k\first ks}{\ell\first \ell s}{g\first gs}&\defeq \begin{cases}
+            \layers{k'\first k\first ks}{\ell'\first \ell\first \ell s}{g'\first g\first gs} \;\text{if $k'<k+\textup{dom}(g)$}\\
+            \layer{k}{\ell+\textup{def}(g')}{g}\semicolon \layer{k'{-}\textup{def}(g)}{\ell'}{g'} \; \text{else if}\; ks=\ell s=gs=\emptylist\\
+            \layer{k}{\ell+\textup{def}(g')}{g}\semicolon (\layer{k'{-}\textup{def}(g)}{\ell'}{g'}\bullet \layers{ks}{\ell s}{gs}) \; \text{otherwise}
+        \end{cases}\\[0.2em]
+        \layers{k\first ks}{\ell \first \ell s}{g \first gs}\bullet \layers{rs}{ss}{hs}&\defeq \layer{k}{\ell}{g}\bullet   (\layers{ks}{\ell s}{gs}\bullet \layers{rs}{ss}{hs})\\[0.2em]
+        \textup{id}_n \star \textup{id}_m &\defeq \textup{id}_{n+m}\\[0.2em]
+        \textup{id}_n \star \layers{ks}{\ell s}{gs} &\defeq \layers{ks\listplus n}{\ell s}{gs} \\[0.2em]
+        \layers{ks}{\ell s}{gs}  \star  \textup{id}_n&\defeq \layers{ks}{\ell s\listplus n}{gs} \\[0.2em]
+        \layers{ks}{\ell s}{gs}\star \layers{rs}{ss}{hs}&\defeq \layers{ks\smallconc (rs\listplus c)}{(\ell s\listplus d )\smallconc  ss}{gs \conc hs}
+    \end{align*}
+\end{definition}
+
+Graphically, the notion of diagrammatic equivalence in PROs is known as \emph{planar isotopy} \cite[Theorem~3.1]{selingerbible}, and, roughly speaking, means that boxes can be moved horizontally without allowing wires to cross each other. To avoid graph-theoretic technicalities and keep the focus on term rewriting, we work under the assumption that the normalizing map $\textup{NF}$ yields exactly the notion of diagrammatic equivalence in PROs without showing that it relates to planar isotopy.
+
+As stated in the following lemma, the normalizing map's definition ensures that all normal forms are fix points, meaning that normalizing a normal form does not change the normal form.
+\begin{lemma}\label{lem:nfnfterm}
+    $\textup{NF}(t)=t$ for any $t\in \nf{\Sigma}$.
+\end{lemma}
+
+\begin{proof} The proof is by induction on the number of layers of $t$. The statement is true when $t=\textup{id}_n$ and $t=\layer{k}{\ell}{g}$. Assume $\layers{k\first ks}{\ell \first \ell s}{g\first gs}$ is in normal form, so in particular $k<ks_1+\textup{dom}(gs_1)$, which implies the following.
+\begin{multline*}
+    \textup{NF}(\layers{k\first ks}{\ell \first \ell s}{g\first gs}) = \textup{NF}(\layer{k}{\ell}{g})\bullet \textup{NF}(\layers{ks}{\ell s}{gs}) \\
+    \overset{\textup{IH}}{=} \layer{k}{\ell}{g}\bullet \layers{ks}{\ell s}{gs} = \layers{k\first ks}{\ell \first \ell s} {g\first gs}
+\end{multline*}
+This proof has been verified with Isabelle/HOL. \qed
+\end{proof}
+
+In order to simplify the proofs on the TRS and make the correspondence between generators and layers clearer, we apply a preprocessing step to terms that replaces each generator $g$ by its corresponding layer $\layer{0}{0}{g}$. The set of preprocessed terms is denoted $\pp{\Sigma}$ and satisfies $\nf{\Sigma}\subset\pp{\Sigma}\subset\terms{\Sigma}$.
+
+
+\subsection{Terminating and Confluent Rewriting System}
+
+Let $\mathcal{R}$ be the TRS containing the rewrite rules \labelcref{ru:seqasso,ru:parasso,ru:seqidleft,ru:seqidright,ru:idid,ru:ididctx,ru:par,ru:parseqidleft,ru:parseqidright,ru:layercom,ru:layercomctx} defined in \cref{fig:prors}. Rewriting can be applied to sub-terms, meaning that $K[L]\rewrite{\mathcal{R}}K[R]$ is a valid rewrite for any rewrite rule $(L\rewrite{}R)\in\mathcal{R}$ and any $K[\cdot]\in\ppcontexts{\Sigma}{\textup{dom}(L)}{\textup{cod}(L)}$. Moreover, some rewrite rules (\labelcref{ru:par,,ru:layercom,,ru:layercomctx}) are subject to additional applicability conditions. All such conditions are decidable and stable under rewriting, ensuring that the normalization procedure is effective and suitable for automation. As stated in the following proposition, the rewriting system $\mathcal{R}$ is sound with respect to the coherence equations.
+\begin{proposition}\label{prop:prosoundness}
+    $t_1\mrewrite{\mathcal{R}}t_2\implies\cat{PRO}_\Sigma\vdash t_1=t_2$ for any $t_1,t_2\in\pp{\Sigma}$.
+\end{proposition}
+\begin{proof}
+    For any rewrite rule $(L\rewrite{}R)\in\mathcal{R}$ and any $K[\cdot]\in\ppcontexts{\Sigma}{\textup{dom}(L)}{\textup{cod}(L)}$, we prove $\cat{PRO}_\Sigma\vdash K[L]=K[R]$ by induction on $K[\cdot]$ where the only non-trivial case is $K[\cdot]=[\cdot]$. For most rewrite rules this is trivial, the only interesting cases \labelcref{ru:layercom,ru:layercomctx} are proved using, in particular, \cref{eq:interchange}. \qed
+\end{proof}
+
+\begin{figure}[t]
+    \fbox{\begin{minipage}{0.982\linewidth}\begin{center}
+        \vspace{-1em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.37\textwidth}
+            \begin{equation}\label{ru:seqasso}\tag{R1}
+                (t\semicolon u)\semicolon v \longrightarrow t\semicolon (u\semicolon v)
+            \end{equation}
+        \end{subfigure}\hspace{2em}
+        \begin{subfigure}{0.42\textwidth}
+            \begin{equation}\label{ru:parasso}\tag{R2}
+                (t\otimes u)\otimes v \longrightarrow t\otimes (u\otimes v)
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.3em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.25\textwidth}
+            \begin{equation}\label{ru:seqidleft}\tag{R3}
+                \textup{id}_n\semicolon t \longrightarrow t
+            \end{equation}
+        \end{subfigure}\hspace{2em}
+        \begin{subfigure}{0.25\textwidth}
+            \begin{equation}\label{ru:seqidright}\tag{R4}
+                t\semicolon\textup{id}_n \longrightarrow t
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.3em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.36\textwidth}
+            \begin{equation}\label{ru:idid}\tag{R5}
+                \textup{id}_n\otimes\textup{id}_m \longrightarrow \textup{id}_{n+m}
+            \end{equation}
+        \end{subfigure}\hspace{2em}
+        \begin{subfigure}{0.46\textwidth}
+            \begin{equation}\label{ru:ididctx}\tag{R6}
+                \textup{id}_n\otimes(\textup{id}_m\otimes t) \longrightarrow \textup{id}_{n+m}\otimes t
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.3em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.82\textwidth}
+            \begin{equation}\label{ru:par}\tag{R7}
+                u\otimes v \longrightarrow (u\otimes\textup{id}_{\textup{dom}(v)})\semicolon(\textup{id}_{\textup{cod}(u)}\otimes v)
+                \;\;\text{if}\;\; u\ne\textup{id}_n\wedge v\ne\textup{id}_m
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.3em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.54\textwidth}
+            \begin{equation}\label{ru:parseqidleft}\tag{R8}
+                \textup{id}_n\otimes(u\semicolon v) \longrightarrow (\textup{id}_n\otimes u)\semicolon(\textup{id}_n\otimes v)
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.3em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.54\textwidth}
+            \begin{equation}\label{ru:parseqidright}\tag{R9}
+                (u\semicolon v)\otimes\textup{id}_n \longrightarrow (u\otimes\textup{id}_n)\semicolon(v\otimes\textup{id}_n)
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.3em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.73\textwidth}
+            \begin{equation}\label{ru:layercom}\tag{R10}
+                \begin{array}{c}
+                    \layer{k_1}{\ell_1}{g_1}\semicolon\layer{k_2}{\ell_2}{g_2} \longrightarrow \layer{k_2}{\ell_2+\textup{def}(g_1)}{g_2}\semicolon \layer{k_1-\textup{def}(g_2)}{\ell_1}{g_1} \\
+                    \text{if}\;\; k_1\ge k_2+\textup{dom}(g_2)
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.3em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.85\textwidth}
+            \begin{equation}\label{ru:layercomctx}\tag{R11}
+                \begin{array}{c}
+                    \layer{k_1}{\ell_1}{g_1}\semicolon (\layer{k_2}{\ell_2}{g_2}\semicolon t) \longrightarrow \layer{k_2}{\ell_2+\textup{def}(g_1)}{g_2}\semicolon (\layer{k_1-\textup{def}(g_2)}{\ell_1}{g_1}\semicolon t) \\
+                    \text{if}\;\; k_1\ge k_2+\textup{dom}(g_2)
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+        \vspace{0.2em}
+    \end{center}\end{minipage}}
+    \caption{The rewrite rules are defined for any $n,m,k_1,k_2,\ell_1,\ell_2\in\N$, $g_1,g_2\in\Sigma$, $t,u,v\in\terms{\Sigma}$ and \labelcref{ru:par,,ru:layercom,,ru:layercomctx} are conditioned. \label{fig:prors}}
+\end{figure}
+
+In the following, we prove that preprocessed terms are reduced into their normal form by applying $\mathcal{R}$. To do so, we show that $\mathcal{R}$ terminates and is confluent. We initially attempted to rely on automated termination and confluence provers such as \textsf{AProVE}~\cite{aprove} and the provers of the \textsf{CoCo}{} competition~\cite{coco}. While these tools were useful for guiding early refinements of the rules, they ultimately did not succeed in producing termination or confluence certificates for our system (at least used from their web interface by our non-expert hands). We therefore carried out the proofs manually and formalize the most important steps with the proof assistant Isabelle/HOL. To keep the formalization light weight, we chose not to use the term rewriting infrastructure present in Isabelle/HOL, concentrating instead our formalizing efforts on the equalities and inequalities at the heart of the proofs.
+
+\begin{proposition}\label{prop:proterminaison}
+    $\mathcal{R}$ terminates.
+\end{proposition}
+\begin{proof}
+    We show that any rewrite sequence $t_1\rewrite{\mathcal{R}}t_2\rewrite{\mathcal{R}}t_3\rewrite{\mathcal{R}}\dots$ is finite. To do so, we define two positive quantities $\beta:\terms{\Sigma}\to\N$ and $\delta_D:\terms{\Sigma}\to\R^+$ (see \cref{fig:quantities}), where the former is parameterized by $D\in\N$, and prove that $(\beta,\delta_D)$ strictly decreases by lexicographical order, for a carefully chosen $D\in\N$. 
+    Notice that as $\delta_D$ takes real positive value, we must also show that it decreases by at least a constant at each step, otherwise the value could decrease infinitely.   
+    Given a term $t\in\terms{\Sigma}$, let $D(t)\defeq 2+\max_{g\in\textup{gen}(t)}|\textup{def}(g)|$. Notice that $D(\cdot)$ is preserved under rewriting, meaning that $D(t_i)=D(t_j)$ for any $i,j$. We prove that
+    \begin{gather*}
+        \beta(K[L])>\beta(K[R])
+        \quad\text{or}\quad
+        \beta(K[L])=\beta(K[R])\wedge\delta_D(K[L])\ge\delta_D(K[R])+\nicefrac{1}{D}
+    \end{gather*}
+    for any rewrite rule $(L\rewrite{}R)\in\mathcal{R}$ and any context $K[\cdot]\in\ppcontexts{\Sigma}{\textup{dom}(L)}{\textup{cod}(L)}$, where we chose $D\defeq D(K[L])=D(K[R])$. This is straightforwardly proved by induction on $K[\cdot]$ where the base cases $K[\cdot]=[\cdot]$ have been verified with Isabelle/HOL. More precisely, we prove  that \labelcref{ru:seqasso,ru:parasso,ru:seqidleft,ru:seqidright,ru:idid,ru:ididctx,ru:par,ru:parseqidleft,ru:parseqidright} strictly decrease $\beta$ while \labelcref{ru:layercom,ru:layercomctx} preserve $\beta$ and strictly decrease $\delta_D$. \qed
+\end{proof}
+
+\begin{remark}
+    The fact that \labelcref{ru:layercom,ru:layercomctx} strictly decrease $\delta_D$ is not trivial, and is only true with a careful choice of $D\in\N$. More precisely, $D\defeq D(K[L])=D(K[R])$ ensures that $D\ge 2-\textup{def}(g_2)$, which implies $1-\nicefrac{1}{D}\ge\nicefrac{1}{D}(1-\textup{def}(g_2))$. Moreover, the condition $k_1\ge k_2+\textup{dom}(g_2)$ with $\textup{dom}(g_2)\ge1$ yields the following.
+    \begin{gather*}
+        k_1\ge k_2+1
+        \implies (1-\nicefrac{1}{D})k_1\ge (1-\nicefrac{1}{D})(k_2+1) \\
+        \implies k_1 + \nicefrac{1}{D}k_2 \ge k_2 + \nicefrac{1}{D}k_1 + (1-\nicefrac{1}{D}) \ge k_2 + \nicefrac{1}{D}k_1 + \nicefrac{1}{D}(1-\textup{def}(g_2)) \\
+        \implies k_1 + \nicefrac{1}{D}k_2 \ge k_2 + \nicefrac{1}{D}(k_1-\textup{def}(g_2)) + \nicefrac{1}{D}
+        \implies \delta_D(L)\ge\delta_D(R)+\nicefrac{1}{D}
+    \end{gather*}
+\end{remark}
+
+\begin{lemma}\label{lem:nfispreserved}
+    $t_1\rewrite{\mathcal{R}}^* t_2{\implies}\textup{NF}(t_1)=\textup{NF}(t_2)$ for any $t_1,t_2\in\pp{\Sigma}$.
+\end{lemma}
+\begin{proof}
+    For any rewrite rule $(L\rewrite{}R)\in\mathcal{R}$ and any $K[\cdot]\in\ppcontexts{\Sigma}{\textup{dom}(L)}{\textup{cod}(L)}$, the equality $\textup{NF}(K[L])=\textup{NF}(K[R])$ is straightforwardly proved by induction on $K[\cdot]$ where the base cases $K[\cdot]=[\cdot]$ have been verified with Isabelle/HOL. \qed
+\end{proof}
+
+
+\begin{figure}[t]
+    \begin{center}
+        \setlength{\tabcolsep}{2.4pt}
+        \begin{tabular}{|c|c|c|c|c|}
+            \hline
+            & $\alpha:\terms{\Sigma}\to\N$ & $\beta:\terms{\Sigma}\to\N$ & $\gamma:\terms{\Sigma}\to\N$ & $\delta_D:\terms{\Sigma}\to\R^+$ \\
+            \hline
+            $\textup{id}_n$ & $0$ & $2$ & $n$ & $0$ \\
+            \hline
+            $g$ & $\begin{array}{c}
+                nm^2{+}1 \;\text{if}\; g=\sigma_{n,m}\\
+                0 \;\text{otherwise}
+            \end{array}$ & $5$ & $0$ & $0$ \\
+            \hline
+            $u\semicolon v$ & $\alpha(u)+\alpha(v)$ & $2\beta(u)+\beta(v)+1$ & $\gamma(u)+\gamma(v)$ & $\delta_D(u)+\frac{1}{D}\delta_D(v)$ \\ 
+            \hline
+            $u\otimes v$ & $\alpha(u)+\alpha(v)$ & $\beta(u)^2\beta(v)$ & $\gamma(u)+2\gamma(v)$ & $\begin{array}{c}
+                n+\delta_D(v) \;\text{if}\; u=\textup{id}_n\\
+                \delta_D(u)+\delta_D(v) \;\text{otherwise}
+            \end{array}$\\
+            \hline
+            \hline
+            $\layer{k}{\ell}{g}$ & $\begin{array}{c}
+                d \;\text{if}\; g=\tau_d\\
+                \alpha(g) \;\text{otherwise}
+            \end{array}$ & $200$ & $k+4\ell$ & $k$ \\
+            \hline
+        \end{tabular}
+
+        \vspace{1em}
+
+        \setlength{\tabcolsep}{4.95pt}
+        \begin{tabular}{|c|c|c|c|c|}
+            \hline
+            Rewrite rules & $\;\;\alpha\;\;$ & $\;\;\beta\;\;$ & $\;\;\gamma\;\;$ & $\;\;\delta_D\;\;$ \\
+            \hline
+            \labelcref{ru:seqasso,,ru:parasso,,ru:seqidleft,,ru:seqidright,,ru:idid,,ru:ididctx,,ru:par,,ru:parseqidleft,,ru:parseqidright} & $=$ & $>$ & & \\
+            \hline
+            \labelcref{ru:layercom,ru:layercomctx} & & $=$ & & $>$ \\
+            \hline
+            \labelcref{ru:swap:swap0left,,ru:swap:swap0right,,ru:swap:swapreduce} & $>$ & & & \\
+            \hline
+            \labelcref{ru:swap:layernat,ru:swap:layernatctx} & $=$ & $=$ & $>$ & \\
+            \hline
+            \labelcref{ru:swap:layercon,ru:swap:layerconctx} & $>$ & & & \\
+            \hline
+            \labelcref{ru:swap:layerfus,ru:swap:layerfusctx} & $>$ & & & \\
+            \hline
+            \labelcref{ru:swap:layercom,ru:swap:layercomctx} & $=$ & $=$ & $=$ & $>$ \\
+            \hline
+        \end{tabular}
+    \end{center}
+    \caption{The top table defines the positive quantities $\alpha,\beta,\gamma,\delta_D$, where the former is parameterized by $D\in\N$. These quantities are used to prove the termination of $\mathcal{R}$ and $\mathcal{R}_0$ in \cref{prop:proterminaison,prop:permterminaison} respectively. The last line of the table gives the value of each quantity applied to layers. The bottom table describes which rewrite rules strictly decrease ($>$) or preserve ($=$) each quantity. All cases so indicated have been verified with Isabelle/HOL. \label{fig:quantities}}
+\end{figure}
+
+\begin{lemma}\label{lem:nfterminaison}
+    $t\notrewrite{\mathcal{R}}\implies t\in \nf{\Sigma}$ for any $t\in \pp{\Sigma}$.
+\end{lemma}
+\begin{proof}
+    By induction on $t$. The base cases $t=\textup{id}_n$ for $n\in\N$ are direct because $\textup{id}_n\notrewrite{\mathcal{R}}$ and $\textup{id}_n\in \nf{\Sigma}$. The base cases $t\in\Sigma$ are trivial because $t\notin \pp{\Sigma}$.
+    \begin{itemize}
+        \item Suppose $t=u\semicolon v$ and $t\notrewrite{\mathcal{R}}$. Then $u,v\in \pp{\Sigma}$ and $u\notrewrite{\mathcal{R}},v\notrewrite{\mathcal{R}}$ which, by IH, implies $u,v\in \nf{\Sigma}$. Notice that $u\ne\textup{id}_n\ne v$ otherwise \labelcrefor{ru:seqidleft,ru:seqidright} applies. So, it must be the case that $u=\layer{k}{\ell}{g}$ and $v=\layers{ks}{\ell s}{gs}$ for some $k,\ell,p\in\N$, $g\in\Sigma$, $ks,\ell s\in\N^p$, $gs\in\Sigma^p$ such that $p>0$, otherwise \eqref{ru:seqasso} applies. Moreover, $k<ks_1+\textup{dom}(gs_1)$, otherwise \labelcrefor{ru:layercom,ru:layercomctx} applies. Hence, $t=\layers{k\first ks}{\ell\first \ell s}{g\first gs}\in \nf{\Sigma}$.
+        \item Suppose $t=u\otimes v$ and $t\notrewrite{\mathcal{R}}$. Then $u\notrewrite{\mathcal{R}},v\notrewrite{\mathcal{R}}$. Notice that $u$ and $v$ are not necessarily in $\pp{\Sigma}$, so we cannot use the IH. Nevertheless, we know that $u,v\notin\Sigma$, otherwise $t\notin \pp{\Sigma}$. In fact, we know for sure that $u=\textup{id}_k$ and $v=v_1\otimes v_2$ for some $k\in\N$ and $v_1,v_2\in\terms{\Sigma}$, otherwise a rule among \labelcref{ru:parasso,,ru:idid,,ru:par,,ru:parseqidleft,,ru:parseqidright} applies. For the same reason and the fact that \eqref{ru:ididctx} is not applicable, it must be the case that $v_1=g$ and $v_2=\textup{id}_\ell$ for some $g\in\Sigma$ and $\ell\in\N$. Hence, $t=\textup{id}_k\otimes(g\otimes\textup{id}_\ell)=\layer{k}{\ell}{g}\in \nf{\Sigma}$.
+    \end{itemize} \qed
+\end{proof}
+
+\begin{proposition}\label{prop:proconfluence}
+    $\mathcal{R}$ is confluent in $\pp{\Sigma}$.
+\end{proposition}
+\begin{proof}
+    Let $t\in \pp{\Sigma}$. If $t\rewrite{\mathcal{R}}^*u$ and $t\rewrite{\mathcal{R}}^*v$, then by \cref{prop:proterminaison} there exist $u'v'\in\pp{\Sigma}$ such that $u\rewrite{\mathcal{R}}^*u'\notrewrite{\mathcal{R}}$ and $v\rewrite{\mathcal{R}}^*v'\notrewrite{\mathcal{R}}$. \cref{lem:nfnfterm,lem:nfispreserved,lem:nfterminaison} imply $\textup{NF}(t)=u'=v'$, which concludes the proof. \qed
+\end{proof}
+
+As stated in the following theorem, the termination and confluence of $\mathcal{R}$ solve our problem: given two diagrammatically equivalence terms $t_1,t_2\in\pp{\Sigma}$, we can effectively rewrite $t_1$ into $t_2$ using the coherence equations.
+
+\begin{theorem}
+    $\textup{NF}(t_1)=\textup{NF}(t_2)\implies t_1\bothmrewrite{\mathcal{R}} t_2$ for any $t_1,t_2\in\pp{\Sigma}$.
+\end{theorem}
+\begin{proof}
+    \cref{prop:proterminaison,lem:nfnfterm,lem:nfispreserved,lem:nfterminaison} imply that $t_i\rewrite{\mathcal{R}}^*\textup{NF}(t_i)$, and the assumption $\textup{NF}(t_1)=\textup{NF}(t_2)$ yields $t_1\bothmrewrite{\mathcal{R}} t_2$.
+    \qed
+\end{proof}
+
+While the rewrite rules can be applied in any order, it may be more efficient to follow a predefined rewriting strategy. In particular, \labelcref{ru:seqasso,ru:parasso,ru:seqidleft,ru:seqidright,ru:idid,ru:ididctx,ru:par,ru:parseqidleft,ru:parseqidright} allow transforming any preprocessed term into a pre-normal form, and \labelcref{ru:layercom,ru:layercomctx} allow transforming the layers to fulfill the normal form conditions. Hence, the two steps can be applied one after the other.
+
+Notice that the normal form map $\textup{NF}$ is useful on its own.
+Indeed, checking diagrammatic equivalence between two terms $t_1,t_2\in\pp{\Sigma}$ can be directly achieved by checking $\textup{NF}(t_1)=\textup{NF}(t_2)$.
+Nevertheless, as we plan to integrate our TRSs in an overall rewriting-based certification pipeline, the TRS is more interesting to us than the normal form itself.

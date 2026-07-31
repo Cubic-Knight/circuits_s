@@ -1,6 +1,7 @@
 \documentclass[12pt, a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage{courier}
 \usepackage[french]{babel}
 \usepackage{graphicx} % Required for inserting images
 \usepackage{amsmath}
@@ -10,6 +11,7 @@
 \usepackage{stmaryrd}
 \usepackage[hidelinks]{hyperref}
 \usepackage[margin=2.5cm]{geometry}
+\usepackage{listings}
 \usepackage{pgfplots}
 \usepackage{caption}
 \usepackage{subcaption}
@@ -20,8 +22,70 @@
 \input{quantum-circuits.tikzstyles}
 \input{quantum-circuits.tikzdefs}
 
-
 \pgfplotsset{compat=1.18}
+
+\lstdefinelanguage{ExampleIsar}%
+{morekeywords={
+_first,theory,end,types,datatype,consts,defs,primrec,
+syntax,translations,apply, lemma,theorem,corollary,
+done,sorry,goal,proof,fixed variables,_last,simproc_setup},
+sensitive=true,
+morecomment=[l]{-- },
+literate=
+{\\<not>}{{$¬$}}1 {\\<times>}{{$×$}}1
+{\\<Rightarrow>}{{$\Rightarrow$}}1%
+{\\<equiv>}{{$\equiv$}}1 {~=}{{$\not=$}}1
+{\\<rightleftharpoons>}
+{{$\rightleftharpoons$}}1
+{\\<exists>}{{$\exists$}}1
+{\\<parallel>}{{$\parallel$}}1
+{\\<Longrightarrow>}
+{{$\Longrightarrow$}}1
+{\\<lbrakk>}{{$\lsemantics$}}1
+{\\<rbrakk>}{{$\rsemantics$}}1
+{\\<longrightarrow>}
+{{$\longrightarrow$}}1
+{\\<and>}{{$\land$}}1
+{\\<or>}{{$\lor$}}1
+{\\<bigwedge>}{{$\bigwedge$}}1
+{ü}{"u}1 {ä}{"a}1 {ö}{"o}1
+{Ü}{"U}1 {Ä}{"A}1 {Ö}{"O}1 {ß}{{ss}}1
+}[keywords,comments,strings]%
+
+\definecolor{keyword1}{rgb}{0.2,0.3,0.6}
+\definecolor{keyword2}{rgb}{0.3,0.6,0.2}
+\definecolor{keyword3}{rgb}{1,0,0}
+\definecolor{keyword4}{rgb}{0.8,0.5,0.9}
+\definecolor{keyword5}{rgb}{0,0.8,1}
+
+\lstdefinelanguage{Isar}{
+  basicstyle=\ttfamily\small,
+  sensitive = true,
+  keywords = {session,theory,lemma,lemmas,bundle,datatype,function,fun,inductive,simproc_setup,have,including,then,also,moreover,finally,ultimately,using,by,proof,qed},
+  keywords = [2]{sessions,directories,theories,imports,begin,end,where,passive,weak_congproc},
+  keywords = [3]{t,t1,t2,u,u1,u2,v,v1,v2,x,x1,x2,y,y1,y2},
+  keywords = [4]{apply},
+  keywords = [5]{add,only,cong},
+  keywords = [6]{show},
+  keywordstyle=\color{keyword1}\bfseries,
+  keywordstyle=[2]\color{keyword2}\bfseries,
+  keywordstyle=[3]\color{blue},
+  keywordstyle=[4]\color{keyword3}\bfseries,
+  keywordstyle=[5]\color{keyword4},
+  keywordstyle=[6]\color{keyword5}\bfseries,
+  otherkeywords={% Operators
+    >, <, ==
+  },
+  showstringspaces=false,
+  breaklines=true,
+  morecomment=[s]{(*}{*)},
+  commentstyle=\color{red}\ttfamily,
+  literate=
+    {\\<open>}{\guilsinglleft}1
+    {\\<close>}{\guilsinglright}1
+    {\\<lbrakk>}{$\llbracket$}1
+    {\\<rbrakk>}{$\rrbracket$}1
+}
 
 \newtheorem{definition}{Définition}[subsection]
 \newtheorem{theorem}[definition]{Théorème}
@@ -36,6 +100,7 @@
 \author{Alexis Beaucourt}
 
 \newcommand{\tinyinput}[1]{\scalebox{0.44}{\input{#1}}}
+\newcommand{\layer}[3]{L^{\smash{#1}}_{\smash{#2}}(#3)}
 
 \def\prob#1{ \mathbb P \left( #1 \right) }
 \def\esp#1{ \mathbb E \left[ #1 \right] }
@@ -67,11 +132,8 @@
 
 \maketitle
 
-\begin{figure}[ht]
-    \centering
-    \input{pic/first.tikz}
-    \caption{My graph.}
-\end{figure}
+
+\section{Introduction}
 
 \section{Définition des PRO/PROP}
 
@@ -88,7 +150,7 @@ Ainsi que les opérations suivantes:
 Cependant, on quotiente le tout par les égalités de $\mathcal E$, en plus des égalités suivantes:
 
 
-\begin{figure}[t]
+\begin{figure}[h]
     \fbox{\begin{minipage}{0.982\linewidth}\begin{center}
         \vspace{-1em}
         \hspace{-0.8em}
@@ -198,19 +260,238 @@ Et les $\mathcal E_0$ sont les égalités:
 
 Pour le restant de ce rapport, on notera $\simeq$ la relation d'équivalence entre deux termes.
 
+
+Afin de décider l'équivalence $t_1 \simeq t_2$, il convient de définir une fonction de normalisation sur les circuits. Cette fonction est de plus exprimée sous forme de système de réécriture, dont on prouve qu'il est terminant et confluent.
+
+Pour simplifier les notations, on pose $\layer{k}{\ell}{g} = \textup{id}_k \otimes g \otimes \textup{id}_\ell$
+
+Ainsi que le défaut $\textup{def}(u) = \textup{dom}(u) - \textup{cod}(u)$
+
+Pour les $\pro{\Sigma}$, on a le système suivant:
+
+\begin{figure}[h]
+    \fbox{\begin{minipage}{0.982\linewidth}\begin{center}
+        \vspace{-1em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.37\textwidth}
+            \begin{equation}\label{ru:seqasso}\tag{R1}
+                (t\fatsemi u)\fatsemi v \longrightarrow t\fatsemi (u\fatsemi v)
+            \end{equation}
+        \end{subfigure}\hspace{2em}
+        \begin{subfigure}{0.42\textwidth}
+            \begin{equation}\label{ru:parasso}\tag{R2}
+                (t\otimes u)\otimes v \longrightarrow t\otimes (u\otimes v)
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.3em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.25\textwidth}
+            \begin{equation}\label{ru:seqidleft}\tag{R3}
+                \textup{id}_n\fatsemi t \longrightarrow t
+            \end{equation}
+        \end{subfigure}\hspace{2em}
+        \begin{subfigure}{0.25\textwidth}
+            \begin{equation}\label{ru:seqidright}\tag{R4}
+                t\fatsemi\textup{id}_n \longrightarrow t
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.3em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.36\textwidth}
+            \begin{equation}\label{ru:idid}\tag{R5}
+                \textup{id}_n\otimes\textup{id}_m \longrightarrow \textup{id}_{n+m}
+            \end{equation}
+        \end{subfigure}\hspace{2em}
+        \begin{subfigure}{0.46\textwidth}
+            \begin{equation}\label{ru:ididctx}\tag{R6}
+                \textup{id}_n\otimes(\textup{id}_m\otimes t) \longrightarrow \textup{id}_{n+m}\otimes t
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.3em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.82\textwidth}
+            \begin{equation}\label{ru:par}\tag{R7}
+                u\otimes v \longrightarrow (u\otimes\textup{id}_{\textup{dom}(v)})\fatsemi(\textup{id}_{\textup{cod}(u)}\otimes v)
+                \;\;\text{if}\;\; u\ne\textup{id}_n\wedge v\ne\textup{id}_m
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.3em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.54\textwidth}
+            \begin{equation}\label{ru:parseqidleft}\tag{R8}
+                \textup{id}_n\otimes(u\fatsemi v) \longrightarrow (\textup{id}_n\otimes u)\fatsemi(\textup{id}_n\otimes v)
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.3em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.54\textwidth}
+            \begin{equation}\label{ru:parseqidright}\tag{R9}
+                (u\fatsemi v)\otimes\textup{id}_n \longrightarrow (u\otimes\textup{id}_n)\fatsemi(v\otimes\textup{id}_n)
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.3em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.73\textwidth}
+            \begin{equation}\label{ru:layercom}\tag{R10}
+                \begin{array}{c}
+                    \layer{k_1}{\ell_1}{g_1}\fatsemi\layer{k_2}{\ell_2}{g_2} \longrightarrow \layer{k_2}{\ell_2+\textup{def}(g_1)}{g_2}\fatsemi \layer{k_1-\textup{def}(g_2)}{\ell_1}{g_1} \\
+                    \text{if}\;\; k_1\ge k_2+\textup{dom}(g_2)
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.3em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.85\textwidth}
+            \begin{equation}\label{ru:layercomctx}\tag{R11}
+                \begin{array}{c}
+                    \layer{k_1}{\ell_1}{g_1}\fatsemi (\layer{k_2}{\ell_2}{g_2}\fatsemi t) \longrightarrow \layer{k_2}{\ell_2+\textup{def}(g_1)}{g_2}\fatsemi (\layer{k_1-\textup{def}(g_2)}{\ell_1}{g_1}\fatsemi t) \\
+                    \text{if}\;\; k_1\ge k_2+\textup{dom}(g_2)
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+        \vspace{0.2em}
+    \end{center}\end{minipage}}
+\end{figure}
+
+On définit un sorte spéciale de swap $\tau_n = \sigma_{n,1}$
+
+Pour les $\prop{\varnothing}$, on a le système composé des règles \verb|R1_NF| jusqu'à \verb|R9_NF| ainsi que les règles suivantes:
+
+\begin{figure}[h]
+    \fbox{\begin{minipage}{0.982\linewidth}\begin{center}
+        \vspace{-1em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.26\textwidth}
+            \begin{equation}\label{ru:swap:swap0left}\tag{R12}
+                \sigma_{0,n} \longrightarrow \textup{id}_n
+            \end{equation}
+        \end{subfigure}\hspace{3em}
+        \begin{subfigure}{0.26\textwidth}
+            \begin{equation}\label{ru:swap:swap0right}\tag{R13}
+                \sigma_{n,0} \longrightarrow \textup{id}_n
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.5em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.69\textwidth}
+            \begin{equation}\label{ru:swap:swapreduce}\tag{R14}
+                \sigma_{n+1,m+2} \longrightarrow (\sigma_{n+1,m+1}\otimes\textup{id}_1)\fatsemi(\textup{id}_{m+1}\otimes\tau_{n+1})
+            \end{equation}
+        \end{subfigure}        
+
+        \vspace{-0.5em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.66\textwidth}
+            \begin{equation}\label{ru:swap:layernat}\tag{R15}
+                \begin{array}{c}
+                    \layer{k_1}{\ell_1}{\tau_{d_1}}\fatsemi\layer{k_2}{\ell_2}{\tau_{d_2}} \longrightarrow \layer{k_2}{\ell_2}{\tau_{d_2}}\fatsemi \layer{k_1+1}{\ell_1-1}{\tau_{d_1}} \\
+                    \text{if}\;\; d_1\ge1,d_2\ge1 \;\;\text{and}\;\; k_2\le k_1<k_2+d_2-d_1
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.5em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.76\textwidth}
+            \begin{equation}\label{ru:swap:layernatctx}\tag{R16}
+                \begin{array}{c}
+                    \layer{k_1}{\ell_1}{\tau_{d_1}}\fatsemi (\layer{k_2}{\ell_2}{\tau_{d_2}}\fatsemi t) \longrightarrow \layer{k_2}{\ell_2}{\tau_{d_2}}\fatsemi (\layer{k_1+1}{\ell_1-1}{\tau_{d_1}}\fatsemi t) \\
+                    \text{if}\;\; d_1\ge1,d_2\ge1 \;\;\text{and}\;\; k_2\le k_1<k_2+d_2-d_1
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.5em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.84\textwidth}
+            \begin{equation}\label{ru:swap:layercon}\tag{R17}
+                \begin{array}{c}
+                    \layer{k_1}{\ell_1}{\tau_{d_1}}\fatsemi\layer{k_2}{\ell_2}{\tau_{d_2}} \longrightarrow \layer{k_2}{\ell_2+1}{\tau_{d_2-1}}\fatsemi \layer{k_1+1}{\ell_1}{\tau_{d_1-1}} \\
+                    \text{if}\;\; d_1\ge1,d_2\ge1 \;\;\text{and}\;\; k_2\le k_1\wedge k_2+d_2-d_1\le k_1<k_2+d_2
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.5em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.84\textwidth}
+            \begin{equation}\label{ru:swap:layerconctx}\tag{R18}
+                \begin{array}{c}
+                    \layer{k_1}{\ell_1}{\tau_{d_1}}\fatsemi (\layer{k_2}{\ell_2}{\tau_{d_2}}\fatsemi t) \longrightarrow \layer{k_2}{\ell_2+1}{\tau_{d_2-1}}\fatsemi (\layer{k_1+1}{\ell_1}{\tau_{d_1-1}}\fatsemi t) \\
+                    \text{if}\;\; d_1\ge1,d_2\ge1 \;\;\text{and}\;\; k_2\le k_1\wedge k_2+d_2-d_1\le k_1<k_2+d_2
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.5em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.55\textwidth}
+            \begin{equation}\label{ru:swap:layerfus}\tag{R19}
+                \begin{array}{c}
+                    \layer{k_1}{\ell_1}{\tau_{d_1}}\fatsemi\layer{k_2}{\ell_2}{\tau_{d_2}} \longrightarrow \layer{k_2}{\ell_1}{\tau_{d_1+d_2}} \\
+                    \text{if}\;\; d_1\ge1,d_2\ge1 \;\;\text{and}\;\; k_1=k_2+d_2
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.5em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.63\textwidth}
+            \begin{equation}\label{ru:swap:layerfusctx}\tag{R20}
+                \begin{array}{c}
+                    \layer{k_1}{\ell_1}{\tau_{d_1}}\fatsemi (\layer{k_2}{\ell_2}{\tau_{d_2}}\fatsemi t) \longrightarrow \layer{k_2}{\ell_1}{\tau_{d_1+d_2}}\fatsemi t \\
+                    \text{if}\;\; d_1\ge1,d_2\ge1 \;\;\text{and}\;\; k_1=k_2+d_2
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.5em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.63\textwidth}
+            \begin{equation}\label{ru:swap:layercom}\tag{R21}
+                \begin{array}{c}
+                    \layer{k_1}{\ell_1}{\tau_{d_1}}\fatsemi\layer{k_2}{\ell_2}{\tau_{d_2}} \longrightarrow \layer{k_2}{\ell_2}{\tau_{d_2}}\fatsemi \layer{k_1}{\ell_1}{\tau_{d_1}} \\
+                    \text{if}\;\; d_1\ge1,d_2\ge1 \;\;\text{and}\;\; k_1>k_2+d_2
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.5em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.74\textwidth}
+            \begin{equation}\label{ru:swap:layercomctx}\tag{R22}
+                \begin{array}{c}
+                    \layer{k_1}{\ell_1}{\tau_{d_1}}\fatsemi (\layer{k_2}{\ell_2}{\tau_{d_2}}\fatsemi t) \longrightarrow \layer{k_1}{\ell_1}{\tau_{d_1}}\fatsemi (\layer{k_2}{\ell_2}{\tau_{d_2}}\fatsemi t) \\
+                    \text{if}\;\; d_1\ge1,d_2\ge1 \;\;\text{and}\;\; k_1>k_2+d_2
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+        \vspace{0.2em}
+    \end{center}\end{minipage}}
+    \label{fig:permrs}
+\end{figure}
+
 \section{simp dans Isabelle}
 
 \subsection{en général}
 
-En Isabelle/HOL la tactique \verb|simp| permet de modifier (ou prouver) un but en appliquant des règles de réécriture. En particulier, \verb|simp| peut être invoquée sous plusieurs formes:
+En Isabelle/HOL la tactique \lstinline[language=Isar]|simp| permet de modifier (ou prouver) un but en appliquant des règles de réécriture. En particulier, \lstinline[language=Isar]|simp| peut être invoquée sous plusieurs formes:
 \begin{itemize}
-    \item \verb|simp| utilise un ensemble de règles de réécriture par défaut. Cet ensemble est un mix de règles judicieusement choisies par les créateurs de bibliothèques et de règles automatiquement générées par des mots clés comme \verb|function|, \verb|fun|, \verb|inductive|, etc.
-    \item \verb|(simp add: regle1 regle2)| permet à l'utilisateur de rajouter ses propres règles de réécriture dans l'ensemble utilisé par \verb|simp|
-    \item \verb|(simp only: regle1 regle2)| permet à l'utilisateur de ne pas utiliser les règles par défaut, mais seulement celles qu'il choisit
-    \item \verb|(simp cong: regle1 regle2)| permet à l'utilisateur de rajouter des règles de congruence
+    \item \lstinline[language=Isar]|simp| utilise un ensemble de règles de réécriture par défaut. Cet ensemble est un mix de règles judicieusement choisies par les créateurs de bibliothèques et de règles automatiquement générées par des mots clés comme \lstinline[language=Isar]|function|, \lstinline[language=Isar]|fun|, \lstinline[language=Isar]|inductive|, etc.
+    \item \lstinline[language=Isar]|(simp add: regle1 regle2)| permet à l'utilisateur de rajouter ses propres règles de réécriture dans l'ensemble utilisé par \lstinline[language=Isar]|simp|
+    \item \lstinline[language=Isar]|(simp only: regle1 regle2)| permet à l'utilisateur de ne pas utiliser les règles par défaut, mais seulement celles qu'il choisit
+    \item \lstinline[language=Isar]|(simp cong: regle1 regle2)| permet à l'utilisateur de rajouter des règles de congruence
 \end{itemize}
 
-Les options \verb|add|, \verb|only| et \verb|cong| peuvent être utilisées dans la même invocation de \verb|simp|, par exemple \verb|(simp only: regle1 cong: regle2)| n'utilise que 2 règles, dont une de congruence.
+Les options \lstinline[language=Isar]|add|, \lstinline[language=Isar]|only| et \lstinline[language=Isar]|cong| peuvent être utilisées dans la même invocation de \lstinline[language=Isar]|simp|, par exemple \lstinline[language=Isar]|(simp only: regle1 cong: regle2)| n'utilise que 2 règles, dont une de congruence.
 
 Une règle de réécriture est un lemme (qui doit être démontré dans Isabelle) sous la forme $P_1 \implies \cdots \implies P_n \implies A = B$. Il représente la règle $A \to B \text{ si } P_1, \ldots, P_n$
 
@@ -236,9 +517,129 @@ Il est aussi nécessaire d'écrire les règles d'une manière appropriée pour \
 
 Il est également important de prendre en compte la difficulté posée par la soustraction sur les entiers naturels. En effet, si $n \ge m$, $m - n$ est définit comme étant $0$ Par exemple, \verb|1 - 2 = 0| peut être démontré en Isabelle. Il faut donc exprimer $n - m$ par \verb|nat (int n - int m)| (on passe par les entiers relatifs)
 
+
+Un autre obstacle rencontré est le fait que on a besoin de deux règles de congruence:
+\begin{equation}
+    \nf(u_1) = \nf(v_1) \implies \nf(u_2) = \nf(v_2) \implies \nf(u_1 \otimes u_2) = \nf(v_1 \otimes v_2)
+    \label{cong:par}
+    \tag{par\_cg}
+\end{equation}
+
+\begin{equation}
+    \nf(u_1) = \nf(v_1) \implies \nf(u_2) = \nf(v_2) \implies \nf(u_1 \fatsemi u_2) = \nf(v_1 \fatsemi v_2)
+    \label{cong:seq}
+    \tag{seq\_cg}
+\end{equation}
+
+Cependant, Isabelle refusait d'appliquer les deux règles dans le même appel à simp (je pense que c'est parce que le simplificateur ne regarde que la tête du terme, et ne prend qu'une seule règle de congruence par tête, or les deux termes commencent par $\nf$). En effet, un appel à \lstinline[language=Isar]|(simp [...] cong: par_cg seq_cg)| n'applique que la règle \lstinline[language=Isar]|par_cg|, et un appel à \lstinline[language=Isar]|(simp [...] cong: seq_cg par_cg)| n'applique que la règle \lstinline[language=Isar]|seq_cg|
+
+
+J'ai contourné ce problème en utilisant des \verb|congproc| (ou procédures de congruence). Il est alors possible de donner un pattern plus sophistiqué pour chaque règle.
+
+Par exemple, pour la règle \verb|seq_cg|, j'ai écrit la règle
+
+
+\begin{lstlisting}[language=Isar]{}
+simproc_setup passive weak_congproc cong_seq (\<open>NF (Seq x y)\<close>) =
+    \<open>(K (K (K (SOME @{thm seq_cg [cong_format]}))))\<close>
+\end{lstlisting}
+
+Dans le code ci-dessus, une \verb|simproc| (procédure de simplification) nommée \verb|cong_seq| est définie. Le mot clé \lstinline[language=Isar]|weak_congproc| sert à déclarer que cette procédure est en réalité une procédure de congruence, et la partie \verb|weak| signale à isabelle que cette procédure ne s'occupe pas de simplifier l'intérieur du terme.
+
+La partie \lstinline[language=Isar]|\<open>NF (Seq x y)\<close>| indique à Isabelle que cette procédure doit être invoquée lorsque le simplificateur essaie de prouver \lstinline[language=Isar]|NF (Seq x1 x2) = NF (Seq y1 y2)|. Cela permet notammment de la distinguer de l'autre règle qui doit être appliquée sur \lstinline[language=Isar]|\<open>NF (Par x y)\<close>|
+
+L'expression \verb|(K (K (K (SOME @{thm seq_cg [cong_format]}))))| est l'équivalent d'une fonction OCaml \verb|fun _ -> fun _ -> fun _ -> Some seq_cq| qui renvoie le théorème correspondant à la règle de congruence voulue. Il est possible de renvoyer un théorème qui dépend des trois arguments, mais ce n'est ici pas nécessaire.
+
 \subsection{avec les PRO}
 
+Pour la simplification des $\pro{\Sigma}$, on utilise l'ensemble de règles de simplification suivant:
+
+\begin{lstlisting}[language=Isar]{}
+lemmas PRO_simps =
+  R1_NF R2_NF R3_NF R4_NF R5_NF R6_NF R7_NF R8_NF R9_NF R10_NF R11_NF
+
+  admissible.intros              (* rules for admissibility *)
+  dom.simps cod.simps def.simps  (* rules for dom, cod & def *)
+  trm.disc(5-8)                  (* rules for is_Id *)
+
+  arith_simps                       (* rules for arithmetic *)
+  of_nat_0 of_nat_1 of_nat_numeral  (* rules for int *)
+  nat_0 nat_numeral                 (* rules for nat *)
+  num1                              (* rule to handle 1 *)
+
+  rel_simps(1-71)                (* rules for integer inequalities *)
+  simp_thms                      (* rules for boolean calculus *)
+\end{lstlisting}
+
+où les règles \verb|R1_NF| jusqu'à \verb|R11_NF| sont les règles de réduction, et les autres règles permettent l'évaluation de fonction et le calcul sur les entiers et les booléens
+
+J'ai également écrit une preuve pour certifier l'équivalence entre deux termes $t_1$ et $t_2$:
+
+\begin{lstlisting}[language=Isar]{}
+lemma \<open>NF t1 = NF t2\<close>
+proof -
+  have pre_eq: \<open>NF (preproc t1) = NF (preproc t2)\<close>
+    apply (simp only: preproc.simps)
+    including no_limit by (simp only: PRO_simps [[simproc cong_par cong_seq]])?
+  have t1_pre: \<open>NF (preproc t1) = NF t1\<close> using pre by blast
+  have t2_pre: \<open>NF (preproc t2) = NF t2\<close> using pre by blast
+  show ?thesis
+    using t1_pre t2_pre pre_eq by argo
+
+qed
+\end{lstlisting}
+
+Plusieurs détails sont ici importants:
+
+\begin{itemize}
+    \item La fonction \lstinline[language=Isar]|preproc| rajoute quelques circuits vides ($\textup{id}_0$) pour éviter quelques cas problématiques
+    \item \lstinline[language=Isar]|including no_limit| permet à la tactique \lstinline[language=Isar]|simp| d'aller à profondeur très grande dans le résultat (pour que \lstinline[language=Isar]|simp| n'abandonne pas sa simplification)
+    \item Le point d'interrogation présent à la fin de la ligne 5 permet de gérer correctement le cas où les termes $t_1$ et $t_2$ sont exactement égaux. Dans ce cas, le but est déjà résolu à la ligne 4, et la ligne 5 n'est plus nécessaire. Le problème est donc qu'à la ligne 5, Isabelle
+\end{itemize}
+
 \subsection{avec les Perm}
+
+De même, pour les Perm, on utilise cet ensemble de règles:
+
+\begin{lstlisting}[language=Isar]{}
+lemmas PRO_Perm_simps =
+  R1_to_perm  R2_to_perm  R3_to_perm  R4_to_perm  R5_to_perm
+  R6_to_perm  R7_to_perm  R8_to_perm  R9_to_perm  R12_to_perm
+  R13_to_perm R14_to_perm R15_to_perm_simp  R16_to_perm_simp
+  R17_to_perm_simp  R18_to_perm_simp  R19_to_perm_simp
+  R20_to_perm_simp  R21_to_perm_simp  R22_to_perm_simp
+
+  sadmissible.intros             (* rules for admissibility *)
+  dom.simps cod.simps def.simps  (* rules for dom, cod & def *)
+  trm.disc                       (* rules for is_Id *)
+
+  arith_simps                       (* rules for arithmetic *)
+  of_nat_0 of_nat_1 of_nat_numeral  (* rules for int *)
+  nat_0 nat_numeral                 (* rules for nat *)
+  num1                              (* rule to handle 1 *)
+
+  rel_simps                      (* rules for integer inequalities *)
+  simp_thms                      (* rules for boolean calculus *)
+\end{lstlisting}
+
+où les règles \verb|R1_to_perm| jusqu'à \verb|R22_to_perm_simp| sont les règles de réduction du système, et les autres règles permettent l'évaluation de fonction et le calcul sur les entiers et les booléens
+
+Et pour certifier l'équivalence entre deux termes $t_1$ et $t_2$:
+
+\begin{lstlisting}[language=Isar]{}
+lemma \<open>CF \<lbrakk>t1\<rbrakk> = CF \<lbrakk>t2\<rbrakk>\<close>
+proof -
+  have pre_eq: \<open>\<lbrakk>preproc t1\<rbrakk> = \<lbrakk>preproc t2\<rbrakk>\<close>
+    apply (simp only: preproc.simps)
+    including no_limit by (simp only: PRO_Perm_simps [[simproc cong_perm_par cong_perm_seq]])?
+  have \<open>sadmissible t1\<close> including no_limit by (simp only: PRO_Perm_simps)
+  also have \<open>sadmissible t2\<close> including no_limit by (simp only: PRO_Perm_simps)
+  ultimately have \<open>\<lbrakk>t1\<rbrakk> = \<lbrakk>t2\<rbrakk>\<close>
+    using pre_eq perm_preproc[of t1] perm_preproc[of t2] by argo
+  then show ?thesis by argo
+
+qed
+\end{lstlisting}
 
 \section{benchmark}
 
@@ -523,7 +924,34 @@ Cela permet de donner des informations globales sur le circuit de manière local
 \end{remark}
 
 \begin{definition}
-    On pose le système de réécriture suivant sur les circuits numérotés
+    On pose le système de réécriture suivant sur les circuits numérotés (celui intuitif à deux règles)
 \end{definition}
+
+\begin{lemma}
+    Tout circuit qui n'est pas en forme normale possède au moins une règle applicable
+\end{lemma}
+
+\begin{lemma}
+    Le système est terminant
+\end{lemma}
+
+\begin{lemma}
+    Le système est confluent
+\end{lemma}
+
+\begin{remark}
+    La règle 1 (échange vertical) peut être remplacée par 3 règles
+\end{remark}
+
+\begin{remark}
+    La règle 2 (échange à travers une permutation) peut être remplacée par 3 règles (échanges horizontaux; échange à travers un toboggan)
+\end{remark}
+
+\begin{definition}
+    On pose le système de réécriture (formel) sur les circuits numérotés
+
+    (on met aussi les règles R14 à R22 des Perms)
+\end{definition}
+
 
 \end{document}

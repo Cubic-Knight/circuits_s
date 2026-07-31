@@ -1,0 +1,263 @@
+%!TEX root = main.tex
+
+\section{Term Rewriting in the PRO of Permutations}\label{sec:perm}
+
+In this section, we consider the PRO of permutations $\cat{PRO}_{\Sigma_0,\mathcal{E}_0}$, whose generators are the swaps, i.e. $\Sigma_0\defeq\{\sigma_{n,m}:n,m\in\N\}$ and where $\mathcal{E}_0$ is the set containing \cref{eq:emptysymmetry,eq:involution,eq:naturality,eq:symmetryinduct}. $\cat{PRO}_{\Sigma_0,\mathcal{E}_0}$ is the simplest PROP that one can think about, namely $\cat{PROP}_\varnothing$. Intuitively, in this structure, the diagrams have no boxes and are just made of wires, which allows expressing any permutation. Notice that all terms in $\terms{\Sigma_0}$ have an equal number of inputs and outputs. We solve the underlying diagrammatic equivalence problem: given two terms $t_1,t_2\in\terms{\Sigma_0}$ expressing the same permutation, how to effectively rewrite $t_1$ into $t_2$ using the coherence equations (\cref{eq:seqidentity,eq:seqassociativity,eq:parassociativity,eq:idinduct,eq:paridentity,eq:interchange,eq:emptysymmetry,eq:involution,eq:naturality,eq:symmetryinduct})? To do so, we refine the normal form of \cref{def:nf} to define a normal form for the PRO of permutations---that we call \emph{canonical form} to prevent confusion---and provide an associated rewriting system that we prove to be terminating and confluent.
+
+
+\subsection{Canonical Form and Interpretation}
+
+The permutations of size $n\in\N$, whose set is denoted $\cat{Perm}(n)$, are the bijective maps from $\natset{n}$ to itself. A permutation ${\pi\in\cat{Perm}(n)}$ is denoted $(\pi(1),\dots,\pi(n))$. For instance, ${(2,1,3)\in\cat{Perm}(3)}$ is the permutation mapping $1$ to $2$, $2$ to $1$ and $3$ to itself. There is only one permutation of size $0$, denoted $(\,)$, and only one permutation of size $1$, denoted $(1)$. In the following, $|\pi|$ denotes the size of the permutation $\pi$ and $\pi^{-1}$ its inverse. Two permutations $\pi_1,\pi_2\in\cat{Perm}(n)$ can be composed sequentially with $\circ$ as the usual composition, i.e.~$(\pi_2\circ\pi_1)(i)\defeq\pi_2(\pi_1(i))$ for any $i\in\natset{n}$. Two permutations $\pi_1\in\cat{Perm}(n),\pi_2\in\cat{Perm}(m)$ can be composed in parallel with the direct sum $\oplus$ defined as follows for any $i\in\natset{n+m}$.
+\begin{gather*}
+    (\pi_1\oplus\pi_2)(i)\defeq\begin{cases}
+        \pi_1(i) &\text{if}\; 1\le i\le n\\
+        n+\pi_2(i-n) &\text{if}\; n<i\le n+m
+    \end{cases}
+\end{gather*}
+
+Let $\cat{Perm}\defeq\cup_{n\in\N}\cat{Perm}(n)$ be the collection of all permutations. Then, each term $t:n\to n\in\terms{\Sigma_0}$ can be interpreted as a permutation of size $n$.
+
+\begin{definition}[interpretation]
+    Let $\interp{\cdot}:\terms{\Sigma_0}\to\cat{Perm}$ be the \emph{interpretation}, inductively defined as follows.
+    \begin{gather*}
+        \interp{\textup{id}_n}\defeq (1,\dots,n)\hspace{3em}
+        \interp{\sigma_{n,m}}\defeq (n+1,\dots,n+m,1,\dots,n)\\
+        \interp{u\semicolon v}\defeq\interp{v}\circ\interp{u} \hspace{3em}
+        \interp{u\otimes v}\defeq\interp{u}\oplus\interp{v}
+    \end{gather*}
+\end{definition}
+
+Given $d\in\N$, let $\tau_d \defeq \sigma_{d,1}$ be the \emph{toboggan} of size $d$. Intuitively, the diagrammatic representation of $\tau_d$ lifts its last wire to the top, and its interpretation is $\interp{\tau_d}=(2,\dots,d+1,1)$, which implies the following equality.
+\begin{gather*}
+    \interp{\layer{k}{\ell}{\tau_d}}=(1,\dots,k,k+2,\dots,k+d+1,k+1,k+d+2,\dots,k+d+1+\ell)
+\end{gather*}
+
+We now define the \emph{canonical form} and its associated canonizing map. Given $ks,\ell s,ds\in\N^p$ with $p>0$, we introduce the following notation.
+\begin{gather*}
+    \clayers{ks}{\ell s}{ds}\defeq \layers{ks}{\ell s}{[\tau_{ds_i}]_{i\in\natset{p}}}
+\end{gather*}
+
+\begin{definition}[canonical form]\label{def:cf}
+    The set $\cf{\Sigma_0}$ of terms in \emph{canonical form} is inductively defined as follows: $\textup{id}_n$ is in canonical form ; $\layer{k}{\ell}{\tau_d}$ is in canonical form if $d\ge1$ ; and $\clayers{k\first ks}{\ell\first \ell s}{d\first ds}$ is in canonical form if $d\ge1$ and $\clayers{ks}{\ell s}{ds}$ is in canonical form while satisfying $k<ks_1$.
+\end{definition}
+
+\begin{example}\label{ex:examplecf}
+    The term $(\textup{id}_1\otimes\tau_1\otimes\tau_1)\semicolon(\sigma_{2,2}\otimes\textup{id}_1)\semicolon(\sigma_{1,2}\otimes\tau_1)\semicolon(\textup{id}_1\otimes\sigma_{1,2}\otimes\textup{id}_1)\semicolon(\textup{id}_3\otimes\tau_1)\semicolon(\tau_3\otimes\textup{id}_1)$ is equivalent to $\clayers{[0,1,2,3]}{[2,0,1,0]}{[2,3,1,1]}$, which is in canonical form. These terms can be graphically depicted as follows.
+    \begin{gather*}
+        \tf{cf_example_left} = \tf{cf_example_right}
+    \end{gather*}
+\end{example}
+
+\begin{definition}[canonizing map]
+    Let $\textup{CF}:\cat{Perm}\to \cf{\Sigma_0}$ be the \emph{canonizing map} that assigns to each permutation $\pi\in\cat{Perm}(n)$ its term in canonical form $\textup{CF}(\pi):n\to n$, inductively defined as
+    \vspace{-0.5em}
+    \begin{gather*}
+        \textup{CF}((\;))\defeq \textup{id}_0 \hspace{3em}
+        \textup{CF}((1))\defeq \textup{id}_1 \\
+        \textup{CF}(\pi)\defeq\begin{cases}
+            \textup{id}_1\star\textup{CF}(\pi|_1) & \text{if}\;\pi(1)=1\\
+            \layer{0}{|\pi|-\pi^{-1}(1)}{\tau_{\pi^{-1}(1)-1}}\bullet(\textup{id}_1\star\textup{CF}(\pi|_1)) & \text{otherwise}
+        \end{cases} 
+    \end{gather*}
+    where $\pi|_1\in\cat{Perm}(|\pi|-1)$ is the permutation satisfying $(\pi|_1)(i)\defeq\pi(i)-1$ when $1\le i<\pi^{-1}(1)$ and $(\pi|_1)(i)\defeq\pi(i+1)-1$ when $\pi^{-1}(1)\le i\le|\pi|-1$.
+\end{definition}
+
+Notice that $\cf{\Sigma_0}\subset\nf{\Sigma_0}\subset\pp{\Sigma_0}\subset\terms{\Sigma_0}$. Moreover, as stated in the following lemma, the canonizing map's definition is compatible with $\interp{\cdot}$.
+
+\begin{lemma}\label{lem:cfcfterm}
+    $\textup{CF}(\interp{t})=t$ for any $t\in \cf{\Sigma_0}$.
+\end{lemma}
+\begin{proof}
+    In the following we use the notation $\pi^{\oplus n}\defeq \pi\oplus\dots\oplus\pi$ (with $n$ compositions $\oplus$). 
+    If $t=\textup{id}_n$, then $\textup{CF}(\interp{\textup{id}_n})=\textup{CF}((1)^{\oplus n})=\textup{id}_n$. Otherwise, we proceed by induction on the number of layers. If $t=\layer{k}{\ell}{\tau_d}$, then $\textup{CF}(\interp{\layer{k}{\ell}{\tau_d}})=\textup{id}_k\star\textup{CF}(\interp{\layer{0}{\ell}{\tau_d}})=\textup{id}_k\star(\layer{0}{\ell}{\tau_d}\bullet(\textup{id}_1\star\textup{CF}((1)^{\oplus \ell+d})))=\layer{k}{\ell}{\tau_d}$. Moreover, if $t=\clayers{k\first ks}{\ell\first \ell s}{d\first ds}$, then we have the following proof.
+    \begin{minipage}[b]{0.95\linewidth}
+    \begin{gather*}
+        \textup{CF}(\interp{C(k\first ks,\ell\first \ell s,d\first ds)})
+        =\textup{id}_k\star\textup{CF}(\interp{C(0\first (ks\listminus k),\ell\first \ell s,d\first ds)}) \\
+        =\textup{id}_k\star(\layer{0}{\ell+d-d}{\tau_d}\bullet(\textup{id}_1\star\textup{CF}(\interp{C(ks\listminus k\listminus 1,\ell s,ds)}))) \\[-0.4em]
+        \overset{\textup{IH}}{=}\textup{id}_k\star(\layer{0}{\ell}{\tau_d}\bullet (\textup{id}_1\star C(ks\listminus k\listminus 1,\ell s,ds))) 
+        =C(k\first ks,\ell\first \ell s,d\first ds)
+    \end{gather*}
+\end{minipage}%
+\begin{minipage}[b]{0.05\linewidth}
+    \qed
+\end{minipage}
+\end{proof}
+
+
+\subsection{Terminating and Confluent Rewriting System}
+
+We introduce the new rewrite rules in \cref{fig:permrs}. The rules \labelcref{ru:seqasso,ru:parasso,ru:seqidleft,ru:seqidright,ru:idid,ru:ididctx,ru:par,ru:parseqidleft,ru:parseqidright} (see \cref{fig:prors}) together with the rules \labelcref{ru:swap:swap0left,ru:swap:swap0right,ru:swap:swapreduce,ru:swap:layernat,ru:swap:layercon,ru:swap:layerfus,ru:swap:layercom,ru:swap:layernatctx,ru:swap:layerconctx,ru:swap:layerfusctx,ru:swap:layercomctx} form the rewriting system $\mathcal{R}_0$. Notice that $\mathcal{R}_0$ contains all rules of $\mathcal{R}$ except \labelcref{ru:layercom,ru:layercomctx}, which have been replaced by the rules \labelcref{ru:swap:layernat,ru:swap:layercon,ru:swap:layerfus,ru:swap:layercom,ru:swap:layernatctx,ru:swap:layerconctx,ru:swap:layerfusctx,ru:swap:layercomctx}. 
+
+\begin{remark}
+    \labelcref{ru:swap:layernat,,ru:swap:layercon,,ru:swap:layerfus,,ru:swap:layercom} explain how to transform a sequence of two layers $\layer{k_1}{\ell_1}{\tau_{d_1}}$ and $\layer{k_2}{\ell_2}{\tau_{d_2}}$ whenever $k_1\ge k_2$, and \labelcref{ru:swap:layernatctx,,ru:swap:layerconctx,,ru:swap:layerfusctx,,ru:swap:layercomctx} apply the same transformations when more layers follow. Here are some graphical examples.
+    \begin{gather*}
+        \tinytf{layernat_example_left}\rewrite{\eqref{ru:swap:layernat}}\tinytf{layernat_example_right} \hspace{3em}
+        \tinytf{layercon_example_left}\rewrite{\eqref{ru:swap:layercon}}\tinytf{layercon_example_right} \\[0.2em]
+        \tinytf{layerfus_example_left}\rewrite{\eqref{ru:swap:layerfus}}\tinytf{layerfus_example_right} \hspace{3em}
+        \tinytf{layercom_example_left}\rewrite{\eqref{ru:swap:layercom}}\tinytf{layercom_example_right}
+    \end{gather*}
+\end{remark}
+
+As stated in the following proposition, the rewriting system $\mathcal{R}_0$ is sound with respect to the coherence equations.
+\begin{proposition}\label{prop:permsoundness}
+    $t_1\mrewrite{\mathcal{R}_0}t_2\implies\cat{PRO}_{\Sigma_0,\mathcal{E}_0}\vdash t_1=t_2$ for any $t_1,t_2\in\pp{\Sigma_0}$.
+\end{proposition}
+\begin{proof}
+    For any rewrite rule $(L\rewrite{}R)\in\mathcal{R}_0$ and any $K[\cdot]\in\ppcontexts{\Sigma_0}{\textup{dom}(L)}{\textup{cod}(L)}$, we prove $\cat{PRO}_{\Sigma_0,\mathcal{E}_0}\vdash K[L]=K[R]$ by induction on $K[\cdot]$ where the only non-trivial case is $K[\cdot]=[\cdot]$. For most rewrite rules this is trivial, the only interesting cases \labelcref{ru:swap:swapreduce,ru:swap:layernat,ru:swap:layercon,ru:swap:layerfus,ru:swap:layercom,ru:swap:layernatctx,ru:swap:layerconctx,ru:swap:layerfusctx,ru:swap:layercomctx} are proved using, in particular, \cref{eq:involution,eq:naturality,eq:symmetryinduct}. \qed
+\end{proof}
+
+\begin{figure}[t]
+    \fbox{\begin{minipage}{0.982\linewidth}\begin{center}
+        \vspace{-1em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.26\textwidth}
+            \begin{equation}\label{ru:swap:swap0left}\tag{R12}
+                \sigma_{0,n} \longrightarrow \textup{id}_n
+            \end{equation}
+        \end{subfigure}\hspace{3em}
+        \begin{subfigure}{0.26\textwidth}
+            \begin{equation}\label{ru:swap:swap0right}\tag{R13}
+                \sigma_{n,0} \longrightarrow \textup{id}_n
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.5em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.69\textwidth}
+            \begin{equation}\label{ru:swap:swapreduce}\tag{R14}
+                \sigma_{n+1,m+2} \longrightarrow (\sigma_{n+1,m+1}\otimes\textup{id}_1)\semicolon(\textup{id}_{m+1}\otimes\tau_{n+1})
+            \end{equation}
+        \end{subfigure}        
+
+        \vspace{-0.5em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.66\textwidth}
+            \begin{equation}\label{ru:swap:layernat}\tag{R15}
+                \begin{array}{c}
+                    \layer{k_1}{\ell_1}{\tau_{d_1}}\semicolon\layer{k_2}{\ell_2}{\tau_{d_2}} \longrightarrow \layer{k_2}{\ell_2}{\tau_{d_2}}\semicolon \layer{k_1+1}{\ell_1-1}{\tau_{d_1}} \\
+                    \text{if}\;\; d_1\ge1,d_2\ge1 \;\;\text{and}\;\; k_2\le k_1<k_2+d_2-d_1
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.5em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.76\textwidth}
+            \begin{equation}\label{ru:swap:layernatctx}\tag{R16}
+                \begin{array}{c}
+                    \layer{k_1}{\ell_1}{\tau_{d_1}}\semicolon (\layer{k_2}{\ell_2}{\tau_{d_2}}\semicolon t) \longrightarrow \layer{k_2}{\ell_2}{\tau_{d_2}}\semicolon (\layer{k_1+1}{\ell_1-1}{\tau_{d_1}}\semicolon t) \\
+                    \text{if}\;\; d_1\ge1,d_2\ge1 \;\;\text{and}\;\; k_2\le k_1<k_2+d_2-d_1
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.5em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.84\textwidth}
+            \begin{equation}\label{ru:swap:layercon}\tag{R17}
+                \begin{array}{c}
+                    \layer{k_1}{\ell_1}{\tau_{d_1}}\semicolon\layer{k_2}{\ell_2}{\tau_{d_2}} \longrightarrow \layer{k_2}{\ell_2+1}{\tau_{d_2-1}}\semicolon \layer{k_1+1}{\ell_1}{\tau_{d_1-1}} \\
+                    \text{if}\;\; d_1\ge1,d_2\ge1 \;\;\text{and}\;\; k_2\le k_1\wedge k_2+d_2-d_1\le k_1<k_2+d_2
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.5em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.84\textwidth}
+            \begin{equation}\label{ru:swap:layerconctx}\tag{R18}
+                \begin{array}{c}
+                    \layer{k_1}{\ell_1}{\tau_{d_1}}\semicolon (\layer{k_2}{\ell_2}{\tau_{d_2}}\semicolon t) \longrightarrow \layer{k_2}{\ell_2+1}{\tau_{d_2-1}}\semicolon (\layer{k_1+1}{\ell_1}{\tau_{d_1-1}}\semicolon t) \\
+                    \text{if}\;\; d_1\ge1,d_2\ge1 \;\;\text{and}\;\; k_2\le k_1\wedge k_2+d_2-d_1\le k_1<k_2+d_2
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.5em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.55\textwidth}
+            \begin{equation}\label{ru:swap:layerfus}\tag{R19}
+                \begin{array}{c}
+                    \layer{k_1}{\ell_1}{\tau_{d_1}}\semicolon\layer{k_2}{\ell_2}{\tau_{d_2}} \longrightarrow \layer{k_2}{\ell_1}{\tau_{d_1+d_2}} \\
+                    \text{if}\;\; d_1\ge1,d_2\ge1 \;\;\text{and}\;\; k_1=k_2+d_2
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.5em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.63\textwidth}
+            \begin{equation}\label{ru:swap:layerfusctx}\tag{R20}
+                \begin{array}{c}
+                    \layer{k_1}{\ell_1}{\tau_{d_1}}\semicolon (\layer{k_2}{\ell_2}{\tau_{d_2}}\semicolon t) \longrightarrow \layer{k_2}{\ell_1}{\tau_{d_1+d_2}}\semicolon t \\
+                    \text{if}\;\; d_1\ge1,d_2\ge1 \;\;\text{and}\;\; k_1=k_2+d_2
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.5em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.63\textwidth}
+            \begin{equation}\label{ru:swap:layercom}\tag{R21}
+                \begin{array}{c}
+                    \layer{k_1}{\ell_1}{\tau_{d_1}}\semicolon\layer{k_2}{\ell_2}{\tau_{d_2}} \longrightarrow \layer{k_2}{\ell_2}{\tau_{d_2}}\semicolon \layer{k_1}{\ell_1}{\tau_{d_1}} \\
+                    \text{if}\;\; d_1\ge1,d_2\ge1 \;\;\text{and}\;\; k_1>k_2+d_2
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+
+        \vspace{-0.5em}
+        \hspace{-0.8em}
+        \begin{subfigure}{0.74\textwidth}
+            \begin{equation}\label{ru:swap:layercomctx}\tag{R22}
+                \begin{array}{c}
+                    \layer{k_1}{\ell_1}{\tau_{d_1}}\semicolon (\layer{k_2}{\ell_2}{\tau_{d_2}}\semicolon t) \longrightarrow \layer{k_1}{\ell_1}{\tau_{d_1}}\semicolon (\layer{k_2}{\ell_2}{\tau_{d_2}}\semicolon t) \\
+                    \text{if}\;\; d_1\ge1,d_2\ge1 \;\;\text{and}\;\; k_1>k_2+d_2
+                \end{array}
+            \end{equation}
+        \end{subfigure}
+        \vspace{0.2em}
+    \end{center}\end{minipage}}
+    \caption{The rewrite rules are defined for any $n,m,k_1,k_2,\ell_1,\ell_2,d_1,d_2\in\N$ and \labelcref{ru:swap:layernat,ru:swap:layercon,ru:swap:layerfus,ru:swap:layercom,ru:swap:layernatctx,ru:swap:layerconctx,ru:swap:layerfusctx,ru:swap:layercomctx} are conditioned.}
+    \label{fig:permrs}
+\end{figure}
+
+In order to prove termination and confluence, we build upon the result of \cref{sec:pro} and follow a similar proof flow.
+
+\begin{proposition}\label{prop:permterminaison}
+    $\mathcal{R}_0$ terminates.
+\end{proposition}
+\begin{proof}
+    We build upon the proof of \cref{prop:proterminaison} by defining two additional positive quantities $\alpha,\gamma:\terms{\Sigma_0}\to\N$ and show that $\mathcal{R}_0$ strictly decreases $(\alpha,\beta,\gamma,\delta_2)$ with lexicographical order (notice that, as $\textup{def}(g)=0$ for any $g\in\Sigma_0$, we can take $D=2$ for $\delta_D$). The definitions of $\alpha$, $\beta$, $\gamma$ and $\delta_2$ are given in \cref{fig:quantities} together with a sum up of which rewrite rules strictly decrease or preserve each quantity. Again, all the base cases have been verified with Isabelle/HOL. \qed
+\end{proof}
+
+\begin{lemma}\label{lem:cfispreserved}
+    $t_1\rewrite{\mathcal{R}_0}^* t_2\implies\interp{t_1}=\interp{t_2}$ for any $t_1,t_2\in \pp{\Sigma_0}$
+\end{lemma}
+\begin{proof}
+    For any rewrite rule $(L\rewrite{}R)\in\mathcal{R}_0$ and any $K[\cdot]\in\ppcontexts{\Sigma_0}{\textup{dom}(L)}{\textup{cod}(L)}$, the equality $\interp{K[L]}=\interp{K[R]}$ is straightforwardly proved by induction on $K[\cdot]$ where the base cases $K[\cdot]=[\cdot]$ have been verified with Isabelle/HOL.\qed
+\end{proof}
+
+\begin{lemma}\label{lem:cfterminaison}
+    $t\notrewrite{\mathcal{R}_0}\implies t\in \cf{\Sigma_0}$ for any $t\in \pp{\Sigma_0}$.
+\end{lemma}
+\begin{proof}
+    All rewrite rules of $\mathcal{R}$ are in $\mathcal{R}_0$ except \labelcref{ru:layercom,ru:layercomctx}, which exactly correspond to \labelcref{ru:swap:layercom,ru:swap:layercomctx} in $\mathcal{R}_0$ when $g_i=\tau_{d_i}$ for some $d_i\ge1$. Moreover, every generator $\sigma_{n,m}$ in $t$ satisfies $n>0$ and $m=1$, otherwise a rule among \labelcref{ru:swap:swap0left,ru:swap:swap0right,ru:swap:swapreduce} applies. Thus, \cref{lem:nfterminaison} applies and we can assume that $t\in \nf{\Sigma_0}$. This implies that there exists $ks,\ell s,ds\in\N^p$ for some $p>0$ satisfying $ds_i\ge1$ for any $i\in\natset{p}$, such that $t=\clayers{ks}{\ell s}{ds}$. But then $\forall i\in\natset{p-1}:ks_i<ks_{i+1}$, otherwise a rule among \labelcref{ru:swap:layernat,ru:swap:layernatctx,ru:swap:layercon,ru:swap:layerconctx,ru:swap:layerfus,ru:swap:layerfusctx} applies. Hence, $t\in \cf{\Sigma_0}$. \qed
+\end{proof}
+
+\begin{proposition}\label{prop:permconfluence}
+    $\mathcal{R}_0$ is confluent in $\pp{\Sigma_0}$.
+\end{proposition}
+\begin{proof}
+    Let $t\in\pp{\Sigma_0}$. If $t\rewrite{\mathcal{R}_0}^*u$ and $t\rewrite{\mathcal{R}_0}^*v$, then by \cref{prop:permterminaison} there exist $u',v'\in\pp{\Sigma_0}$ such that $u\rewrite{\mathcal{R}_0}^*u'\notrewrite{\mathcal{R}_0}$ and $v\rewrite{\mathcal{R}_0}^*v'\notrewrite{\mathcal{R}_0}$. \cref{lem:cfcfterm,lem:cfispreserved,lem:cfterminaison} imply $\textup{CF}(\interp{t})=u'=v'$, which concludes the proof. \qed
+\end{proof}
+
+As stated in the following theorem, the termination and confluence of $\mathcal{R}_0$ solve our problem: given two terms $t_1,t_2\in\pp{\Sigma_0}$ expressing the same permutation, we can effectively rewrite $t_1$ into $t_2$ using the coherence equations.
+
+\begin{theorem}\label{th:swap}
+    $\interp{t_1}=\interp{t_2}\implies t_1\bothmrewrite{\mathcal{R}_0} t_2$ for any $t_1,t_2\in\pp{\Sigma_0}$.
+\end{theorem}
+\begin{proof}
+    \cref{prop:permterminaison,lem:cfcfterm,lem:cfispreserved,lem:cfterminaison} implies that $t_i\rewrite{\mathcal{R}_0}^*\textup{CF}(\interp{t_i})$, and the assumption $\interp{t_1}=\interp{t_2}$ yields $t_1\bothmrewrite{\mathcal{R}_0} t_2$. \qed
+\end{proof}
