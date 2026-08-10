@@ -18,6 +18,7 @@
 \usepackage{tikz}
 \usetikzlibrary{positioning,intersections}
 \usepackage{tikzit}
+
 \input{sample.tikzstyles}
 \input{quantum-circuits.tikzstyles}
 \input{quantum-circuits.tikzdefs}
@@ -73,9 +74,6 @@ literate=
   keywordstyle=[4]\color{keyword3}\bfseries,
   keywordstyle=[5]\color{keyword4},
   keywordstyle=[6]\color{keyword5}\bfseries,
-  otherkeywords={% Operators
-    >, <, ==
-  },
   showstringspaces=false,
   breaklines=true,
   morecomment=[s]{(*}{*)},
@@ -100,6 +98,7 @@ literate=
 \author{Alexis Beaucourt}
 
 \newcommand{\tinyinput}[1]{\scalebox{0.44}{\input{#1}}}
+\newcommand{\smallinput}[1]{\scalebox{0.75}{\input{#1}}}
 \newcommand{\layer}[3]{L^{\smash{#1}}_{\smash{#2}}(#3)}
 
 \def\prob#1{ \mathbb P \left( #1 \right) }
@@ -122,20 +121,23 @@ literate=
 \def\clt#1{ \overset{+}{ #1 } }
 \def\clrt#1{ \overset{*}{ #1 } }
 
-% abstract potentiel
-% \tableofcontents
-% intro (etat de l'art & motivation & description contenu)
-% conclusion
-% remerciments (loria, veridis, encadrants, g5k)
+
 
 \begin{document}
 
 \maketitle
 
+\tableofcontents
 
 \section{Introduction}
 
-\section{Définition des PRO/PROP}
+\subsection{Abstract}
+TODO
+
+\cite{qccompleteness}
+% intro (etat de l'art rapide & motivation)
+
+\subsection{Définition des PRO/PROP}
 
 Chaque circuit $u$ possède un domaine $\dom(u) \in \N$ et un codomaine $\cod(u) \in \N$
 
@@ -147,7 +149,7 @@ Ainsi que les opérations suivantes:
 
 \input{pic/ops.tikz}
 
-Cependant, on quotiente le tout par les égalités de $\mathcal E$, en plus des égalités suivantes:
+Cependant, on quotiente le tout par les égalités de $\mathcal E$, en plus des égalités (1) à (5) de la Figure 1
 
 
 \begin{figure}[h]
@@ -246,20 +248,31 @@ Cependant, on quotiente le tout par les égalités de $\mathcal E$, en plus des 
         \end{subfigure}
         \vspace{0.2em}
     \end{center}\end{minipage}}
+    \caption{
+        \label{fig:coherencelaws}
+        Egalités des PRO et PROP
+    }
 \end{figure}
 
+
+Il est important de noter que l'ordre des fils d'entrée et de sortie est important dans le sens où il n'est pas permis de les permuter. En particulier:
+
+\input{ex/no_perm_wires.tikz}
 
 
 On peut ensuite définir les $\prop{\Sigma, \mathcal E}$ comme étant des $\pro{\Sigma \cup \Sigma_0, \mathcal E \cup \mathcal E_0}$, où $\Sigma_0$ contient:
 
 \input{pic/swp.tikz}
 
-Et les $\mathcal E_0$ sont les égalités:
+Et les $\mathcal E_0$ sont les égalités (6) à (10) de la Figure 1
 
-[insérer image]
+On définit également les permutations, qui sont les $\prop{\varnothing, \varnothing}$, c'est-à-dire les circuits uniquement composés de swaps. Un tel circuit peut donc être réduit à la permutation qu'il opère sur ses entrées
 
 Pour le restant de ce rapport, on notera $\simeq$ la relation d'équivalence entre deux termes.
 
+\newpage
+
+\subsection{Normalisation des PRO et des Perm}
 
 Afin de décider l'équivalence $t_1 \simeq t_2$, il convient de définir une fonction de normalisation sur les circuits. Cette fonction est de plus exprimée sous forme de système de réécriture, dont on prouve qu'il est terminant et confluent.
 
@@ -267,7 +280,10 @@ Pour simplifier les notations, on pose $\layer{k}{\ell}{g} = \textup{id}_k \otim
 
 Ainsi que le défaut $\textup{def}(u) = \textup{dom}(u) - \textup{cod}(u)$
 
-Pour les $\pro{\Sigma}$, on a le système suivant:
+
+Pour les $\pro{\Sigma}$, on a le système défini en Figure 2
+
+\newpage
 
 \begin{figure}[h]
     \fbox{\begin{minipage}{0.982\linewidth}\begin{center}
@@ -358,11 +374,32 @@ Pour les $\pro{\Sigma}$, on a le système suivant:
         \end{subfigure}
         \vspace{0.2em}
     \end{center}\end{minipage}}
+    \caption{
+        \label{fig:pro_rws}
+        Système de réécriture pour les PRO
+    }
 \end{figure}
+
+
+\begin{example}
+    Si on se munit du circuit suivant:
+
+    \smallinput{ex/nf_pro_right.tikz}
+    
+    Alors on obtient après application des règles:
+
+    \smallinput{ex/nf_pro_left.tikz}
+
+    On remarque en particulier que le circuit en forme normale est découpé en couches contenant chacune une seule porte, et que ces couches sont arrangées de sorte que les portes les plus hautes soient le plus à gauche possible.
+\end{example}
+
+\bigskip
 
 On définit un sorte spéciale de swap $\tau_n = \sigma_{n,1}$
 
-Pour les $\prop{\varnothing}$, on a le système composé des règles \verb|R1_NF| jusqu'à \verb|R9_NF| ainsi que les règles suivantes:
+Pour les $\prop{\varnothing}$, on a le système composé des règles (R1) jusqu'à (R9) de la Figure 2, ainsi que celles définies en Figure 3
+
+\newpage
 
 \begin{figure}[h]
     \fbox{\begin{minipage}{0.982\linewidth}\begin{center}
@@ -476,12 +513,34 @@ Pour les $\prop{\varnothing}$, on a le système composé des règles \verb|R1_NF
         \end{subfigure}
         \vspace{0.2em}
     \end{center}\end{minipage}}
-    \label{fig:permrs}
+    \caption{
+        \label{fig:perm_rws}
+        Système de réécriture pour les permutations
+    }
 \end{figure}
 
-\section{simp dans Isabelle}
+\begin{example}
+    Si on se munit du circuit suivant:
 
-\subsection{en général}
+    \smallinput{ex/nf_perm_left.tikz}
+
+    Alors on obtient après application des règles:
+
+    \smallinput{ex/nf_perm_right.tikz}
+
+    On remarque en particulier que le circuit en forme normale est découpé en couches (comme pour les PRO) contenant chacune un seul $\tau_n$, et que ces couches sont arrangées de sorte que le fil le plus haut modifié par la couche soit strictement décroissant au long du circuit.
+\end{example}
+
+
+\subsection{Contribution}
+
+Durant mon stage, j'ai implémenté l'algorithme produisant les certifiats d'équivalence pour les deux cas déjà traités par mon encadrante (les $\pro{\Sigma}$ et les permutations $\prop{\varnothing}$), et j'ai fait des benchmarks pour avoir une idée de leur efficacité.
+
+J'ai aussi trouvé un système de réécriture qui pourrait étendre les deux cas précédant aux $\prop{\Sigma}$, mais je n'ai pas eu le temps durant mon stage de formaliser ce dernier en Isabelle.
+
+\section{Implémentation des certificats}
+
+\subsection{Le simplificateur d'Isabelle}
 
 En Isabelle/HOL la tactique \lstinline[language=Isar]|simp| permet de modifier (ou prouver) un but en appliquant des règles de réécriture. En particulier, \lstinline[language=Isar]|simp| peut être invoquée sous plusieurs formes:
 \begin{itemize}
@@ -550,7 +609,7 @@ La partie \lstinline[language=Isar]|\<open>NF (Seq x y)\<close>| indique à Isab
 
 L'expression \verb|(K (K (K (SOME @{thm seq_cg [cong_format]}))))| est l'équivalent d'une fonction OCaml \verb|fun _ -> fun _ -> fun _ -> Some seq_cq| qui renvoie le théorème correspondant à la règle de congruence voulue. Il est possible de renvoyer un théorème qui dépend des trois arguments, mais ce n'est ici pas nécessaire.
 
-\subsection{avec les PRO}
+\subsection{Equivalence des PRO}
 
 Pour la simplification des $\pro{\Sigma}$, on utilise l'ensemble de règles de simplification suivant:
 
@@ -597,7 +656,7 @@ Plusieurs détails sont ici importants:
     \item Le point d'interrogation présent à la fin de la ligne 5 permet de gérer correctement le cas où les termes $t_1$ et $t_2$ sont exactement égaux. Dans ce cas, le but est déjà résolu à la ligne 4, et la ligne 5 n'est plus nécessaire. Le problème est donc qu'à la ligne 5, Isabelle
 \end{itemize}
 
-\subsection{avec les Perm}
+\subsection{Equivalence des permutations}
 
 De même, pour les Perm, on utilise cet ensemble de règles:
 
@@ -641,7 +700,7 @@ proof -
 qed
 \end{lstlisting}
 
-\section{benchmark}
+\section{Tests de performance}
 
 \subsection{Méthodologie}
 
@@ -663,7 +722,7 @@ Il est également important de noter qu'Isabelle a pu tourner en parallèle sur 
 
 Tous les exemples ont été lancés sur [TODO insérer nom ordi], effectués sans qu'il y ait d'autres processus en même temps, et tous les tests appartenant à une même famille ont été réalisés durant la même session.
 
-\subsection{PRO bench}
+\subsection{Résultats pour les PRO}
 
 Le nombre d'exemples générés chute très rapidement à partir de la taille 500, du fait du temps de génération.
 
@@ -742,7 +801,7 @@ Le temps de calcul est ici également montré avec l'ordonnée logarithmique. Il
     \end{semilogyaxis}
 \end{tikzpicture}
 
-\subsection{Perm bench}
+\subsection{Résultats pour les permutations}
 
 Ici le nombre d'exemples chute pour les catégories supérieures à 650. Ce nombre est plus grand car il est plus simple de générer des circuits de type Perm que des circuits de type PRO.
 
@@ -827,9 +886,17 @@ Il est important de noter que les points pour les catégories 650, 700 et 750 ne
     \end{axis}
 \end{tikzpicture}
 
-\section{PROP}
+\section{Extension aux PROP}
 
 Afin d'espérer pouvoir obtenir un résultat similaire sur les $\prop{\Sigma, \varnothing}$, on veut définir une forme normale.
+
+\begin{remark}
+    Comme les $\prop{\Sigma}$ sont des $\pro{\Sigma \cup \Sigma_0}$ (avec des générateurs supplémentaires), on peut tout à fait appliquer la fonction de normalisation des $\pro{\Sigma \cup \Sigma_0}$ sur les $\prop{\Sigma}$, ce qui donne un circuit séparé en couches.
+
+    Celà revient, en outre, à considérer que les swap sont des générateurs quelconques (des boîtes noires, en quelque sorte) et à effectuer le processus de normalisation des $\pro{\Sigma \cup \Sigma_0}$ dessus.
+
+    On considèrera donc pendant toute cette partie que les circuits sur lesquels on travaille sont déjà séparé en couches.
+\end{remark}
 
 \subsection{Numérotation}
 
@@ -844,6 +911,9 @@ Cela permet de donner des informations globales sur le circuit de manière local
 \begin{theorem}
     $t_1 \simeq t_2 \leqv G(t_1) = G(t_2)$
 \end{theorem}
+\begin{proof}
+    TODO
+\end{proof}
 
 \begin{corollary}
     Toute quantité qui ne dépend que de $G(t)$ est invariante pour toute la classe d'équivalence de $t$
@@ -859,6 +929,10 @@ Cela permet de donner des informations globales sur le circuit de manière local
     \end{cases} \]
 \end{definition}
 
+\begin{example}
+    TODO
+\end{example}
+
 \begin{lemma}
     Comme la notion de "précéder" ne dépend que du graphe sous-jacent, la profondeur ainsi définie est indépendante de l'élément de la classe d'équivalence choisie.
 \end{lemma}
@@ -873,9 +947,21 @@ Cela permet de donner des informations globales sur le circuit de manière local
     \]
 \end{definition}
 
+\begin{example}
+    TODO
+\end{example}
+
+\begin{remark}
+    Avec cette notion de profondeur, les swaps ont toujours une profondeur paire tandis que les portes ont toujours une profondeur impaire. Ainsi, un swap et une porte n'ont jamais la même profondeur.
+\end{remark}
+
 \begin{definition}
     On définit la priorité d'un fil en faisant un parcours en profondeur sur le graphe. On obtient ainsi un ordre topologique sur les fils.
 \end{definition}
+
+\begin{example}
+    TODO
+\end{example}
 
 \begin{lemma}
     Comme cet ordre ne dépend que du graphe sous-jacent, il est équivalent pour tout élément de la classe d'équivalence.
@@ -885,73 +971,188 @@ Cela permet de donner des informations globales sur le circuit de manière local
     On peut donc munir un circuit des profondeurs et des priorités sans toutefois modifier les classes d'équivalence.
 \end{lemma}
 
+\subsection{Forme normale}
+
 \begin{definition}
     On dit d'un circuit (annoté) est en forme normale si et seulement si:
     \begin{itemize}
-        \item il est "découpé en couches" selon la profondeur $p$
-        \item au sein de chaque couche, les portes sont organisées selon la profondeur de leurs fils de sortie
+        \item la profondeur de ses couches successives est croissante
+        \item pour deux couches de même profondeur qui se suivent et contenant des portes, la porte dont les fils de sortie ont la priorité la plus faible se trouve avant.
+        \item pour une profondeur paire donnée (cela ne concerne donc que les swaps), l'ensemble des couches de cette profondeur représente une permutation qui est en forme normale selon la fonction de normalisation des permutations.
     \end{itemize}
 \end{definition}
 
+\begin{example}
+    TODO
+\end{example}
+
 \begin{lemma}
     La forme normale existe, et est unique.
+    
+    i.e. si $t$ est un circuit, il existe un unique circuit $t' \simeq t$ tel que $t'$ est en forme normale.
 \end{lemma}
 \begin{proof}
-    Existence par correction (DFS) et construction
+    Existence: On peut construire la forme normale à l'aide du graphe $G(t)$.
 
-    Unicité par ordre total des priorités
+    En effet, il suffit d'itérer sur chaque profondeur, et de trier les priorité des portes qui s'y trouvent. Cela force les permutations entre ces portes, qui peuvent être construites en prenant un circuit qui représente cette permutation et en lui applicant la forme normale des permutations.
+
+    Unicité: Il n'y a qu'une seule manière d'arranger les portes pour chaque profondeur (selon les priorités).
+
+    De plus, à une profondeur donnée, les swap n'ont qu'un seul arrangement possible (par l'unicité de la forme normale des permutations)
+
+    La forme normale ainsi définie est donc unique
 \end{proof}
 
 \begin{definition}
-    On note $\nf$ la procédure qui transforme t en forme normale.
+    On note $\nf$ la procédure qui transforme $t$ en forme normale.
 \end{definition}
 
 \begin{property}
     $\nf(\nf(t)) = \nf(t)$
 \end{property}
+\begin{proof}
+    Par définition de $\nf$, on a $\forall u, \nf(u) \simeq u$
+
+    Par unicité de la forme normale, comme $\nf(t)$ est en forme normale, on a bien $\nf(\nf(t)) = \nf(t)$
+\end{proof}
 
 \begin{lemma}
     $t_1 \simeq t_2 \leqv \nf(t_1) = \nf(t_2)$
 \end{lemma}
 \begin{proof}
-    $NF$ ne dépend que du graphe sous-jacent et est unique.
+    Par unicité de la forme normale.
 \end{proof}
 
-\begin{remark}
-    Comme les $\prop{\Sigma}$ sont des $\pro{\Sigma \cup \Sigma_0}$ (avec des générateurs supplémentaires), on peut tout à fait appliquer la fonction de normalisation des $\pro{\Sigma \cup \Sigma_0}$ sur les $\prop{\Sigma}$, ce qui donne un circuit séparé en couches.
-
-    Celà revient, en outre, à considérer que les swap sont des générateurs quelconques (des boîtes noires, en quelque sorte) et à effectuer le processus de normalisation des $\pro{\Sigma \cup \Sigma_0}$ dessus.
-\end{remark}
+\subsection{Système de réécriture}
 
 \begin{definition}
-    On pose le système de réécriture suivant sur les circuits numérotés (celui intuitif à deux règles)
+    On pose le système de réécriture suivant sur les circuits numérotés
+
+    \input{pic/swap_gates.tikz} où $i,j$ sont les priorités des fils sortants et les portes $X$ et $Y$ sont à la même profondeur $p$
+
+    \input{pic/through_perm1.tikz} où $\sigma$ est une permutation
+    
+    \input{pic/through_perm2.tikz} où $\sigma$ est une permutation
+
+    Ce système est très intuitif dans le sens qu'il n'est pas assez formel pour être utilisé par la machine, mais il est toutefois possible de raisonner sur ce système graphiquement. En particulier, ce système demande sans l'expliciter de faire "coulisser" les portes de plus faible priorité vers la gauche. Une version plus formelle de ce système est décrite ci-dessous, même si elle pert le côté "intuition graphique"
 \end{definition}
 
 \begin{lemma}
     Tout circuit qui n'est pas en forme normale possède au moins une règle applicable
 \end{lemma}
+\begin{proof}
+    Supposons qu'aucune règle ne soit applicable.
+
+    Comme les règles 2 et 3 ne sont pas applicables, les portes sont triées par profondeur croissante.
+
+    Les portes adjacentes sont alors de même profondeur, i.e. la règle 1 s'applique si et seulement si il existe 2 portes adjacentes de priorité décroissante (de haut en bas)
+
+    Or la règle 1 ne s'applique pas, d'où les portes sont triées par profondeur et par priorité.
+
+    Le circuit est donc en forme normale.
+\end{proof}
 
 \begin{lemma}
     Le système est terminant
 \end{lemma}
+\begin{proof}
+    Soit $u$ un circuit
+
+    Soit $n$ le nombre d'applications minimal des règles 2 et 3 pour obtenir à partir de $u$ un circuit où toutes les portes sont ordonnées par profondeur
+
+    Soit $m$ le nombre d'applications minimal de la règle 1 pour obtenir à partir de $u$ un circuit où toutes les priorités sont ordonnées.
+
+    On pose alors la mesure $\mu(u) = (n,m)$, avec l'ordre lexicographique.
+
+    On remarque que l'application de la règle 2 ou de la règle 3 fait décroître $n$, et que l'application de la règle 1 ne change pas $n$ et faite décroître $m$.
+
+    Comme l'ordre lexicographique sur $\N \times \N$ est un bon ordre, il n'existe pas de suite infinie strictement décroissante de paires d'entiers.
+
+    Le système de réécriture est donc terminant.
+\end{proof}
 
 \begin{lemma}
     Le système est confluent
 \end{lemma}
+\begin{proof}
+    Soit $t$ un circuit et supposons que l'on a $t_1 \leftarrow t \rightarrow t_2$.
+
+    Comme le système est terminant, il existe $t'_1$ tel que $t_1 \clrt{\rightarrow} t'_1$ et aucune règle ne s'applique à $t'_1$.
+
+    D'après le lemme ci-dessus, $t'_1$ est donc en forme normale, i.e. $t'_1 = \nf(t_1)$.
+
+    On a donc $t_1 \clrt{\rightarrow} \nf(t_1)$
+
+    De même, on a $t_2 \clrt{\rightarrow} \nf(t_2)$
+
+    Or $t_1 \simeq t \simeq t_2$, d'où $\nf(t_1) = \nf(t_2)$
+
+    On a donc bien la confluence du système de réécriture.
+\end{proof}
 
 \begin{remark}
-    La règle 1 (échange vertical) peut être remplacée par 3 règles
+    La règle 1 peut être remplacée par les 3 règles
+
+    \begin{tabular}{c c}
+        \\
+        \smallinput{pic/gate_swap_up.tikz}
+        &
+        \smallinput{pic/gate_swap_down.tikz}
+        \\
+        \\
+        \multicolumn{2}{c}{
+            \smallinput{pic/wire_swap.tikz}
+        }
+        \\
+    \end{tabular}
+
+    où $Y$ est une porte, $i, j$ sont les priorités des fils sortants et $p$ est la profondeur de la couche considérée.
+
+    Note: Pour la troisième règle, la position de la porte $Y$ par rapport aux fils considérés n'est pas importante, donc cette règle s'applique aussi si la porte $Y$ se trouve au dessus des fils de priorité $i$ et $j$
 \end{remark}
 
 \begin{remark}
-    La règle 2 (échange à travers une permutation) peut être remplacée par 3 règles (échanges horizontaux; échange à travers un toboggan)
+    Les règles 2 et 3 peuvent être remplacées par les 4 règles
+
+    \begin{tabular}{c c}
+        \\
+        \smallinput{pic/gate_exch1.tikz}
+        &
+        \smallinput{pic/gate_exch2.tikz}
+        \\
+        \\
+        \smallinput{pic/through_tobo1.tikz}
+        &
+        \smallinput{pic/through_tobo2.tikz}
+        \\
+    \end{tabular}
+
+    où les boîtes vides représentent des swaps ou des portes, et les boîtes nommés $X$ représentent des portes uniquement. De plus, $p_1$ et $p_2$ représentent ici les profondeurs des couches considérées.
+
 \end{remark}
 
 \begin{definition}
-    On pose le système de réécriture (formel) sur les circuits numérotés
-
-    (on met aussi les règles R14 à R22 des Perms)
+    On pose le système de réécriture (formel) sur les circuits numérotés composé des 7 règles décrites ci-dessus, ainsi que des règles R14 à R22 des permutations (voir Figure 3)
 \end{definition}
 
+\begin{remark}
+    Je n'ai pas démontré la terminaison du système formel, mais la terminaison du système intuitif donne une bonne indication que le système que j'ai ici décrit est effectivement terminant
+\end{remark}
+
+\section{Conclusion}
+
+Il reste sur le sujet plusieurs choses à faire, comme formaliser le système de réécriture en Isabelle, prouver sa terminaison et sa confluence, et enfin implémenter le certificat permettant de décider l'équivalence des $\prop{\Sigma}$.
+
+\section{Remerciments}
+
+Je voudrais remercier mon encadrante de stage (Sophie Tourret), les autres personnes travaillant sur le sujet pour leur indications et appréciations (Julie Cailler et Noé Delorme), toute l'équipe VERIDIS m'ayant accueilli au laboratoire, et le laboratoire LORIA.
+
+Je remercie aussi Grid5000 pour m'avoir permis de faire tourner mes tests de performance.
+
+
+\bibliographystyle{splncs04}
+\bibliography{ref}
+
+TODO papier original, papier quantique, papier bench, papier graphe
 
 \end{document}

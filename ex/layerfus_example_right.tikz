@@ -1,0 +1,43 @@
+\begin{tikzpicture}
+	\begin{pgfonlayer}{nodelayer}
+		\node [style=none] (16) at (2, 1) {};
+		\node [style=none] (17) at (2, 0.25) {};
+		\node [style=none] (18) at (2, -0.5) {};
+		\node [style=none] (19) at (2, -1.25) {};
+		\node [style=none] (20) at (1, 1) {};
+		\node [style=none] (21) at (1, 0.25) {};
+		\node [style=none] (22) at (1, -0.5) {};
+		\node [style=none] (23) at (1, -1.25) {};
+		\node [style=none] (24) at (-1, 1) {};
+		\node [style=none] (25) at (-1, 0.25) {};
+		\node [style=none] (26) at (-1, -0.5) {};
+		\node [style=none] (27) at (-1, -1.25) {};
+		\node [style=none] (28) at (0, 1) {};
+		\node [style=none] (29) at (0, 0.25) {};
+		\node [style=none] (30) at (0, -0.5) {};
+		\node [style=none] (31) at (0, -1.25) {};
+		\node [style=none] (32) at (-0.5, 1.5) {};
+		\node [style=none] (33) at (-0.5, -1.75) {};
+		\node [style=none] (34) at (1.5, -1.75) {};
+		\node [style=none] (35) at (1.5, 1.5) {};
+		\node [style=none, text=gray] (36) at (0.5, 2) {$L^0_0(\tau_3)$};
+	\end{pgfonlayer}
+	\begin{pgfonlayer}{edgelayer}
+		\draw (16.center) to (20.center);
+		\draw (17.center) to (21.center);
+		\draw (18.center) to (22.center);
+		\draw (19.center) to (23.center);
+		\draw (28.center) to (24.center);
+		\draw (29.center) to (25.center);
+		\draw (30.center) to (26.center);
+		\draw (31.center) to (27.center);
+		\draw (28.center) to (21.center);
+		\draw (29.center) to (22.center);
+		\draw (30.center) to (23.center);
+		\draw (31.center) to (20.center);
+		\draw [style=greyetc] (32.center) to (35.center);
+		\draw [style=greyetc] (35.center) to (34.center);
+		\draw [style=greyetc] (33.center) to (34.center);
+		\draw [style=greyetc] (32.center) to (33.center);
+	\end{pgfonlayer}
+\end{tikzpicture}

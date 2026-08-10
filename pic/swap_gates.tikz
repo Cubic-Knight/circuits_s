@@ -1,0 +1,44 @@
+\begin{tikzpicture}
+	\begin{pgfonlayer}{nodelayer}
+		\node [style=none] (20) at (-1.5, 0.5) {};
+		\node [style=none] (21) at (-3, 0.5) {};
+		\node [style=none] (36) at (-1.5, -0.5) {};
+		\node [style=none] (37) at (-3, -0.5) {};
+		\node [style=gate] (40) at (-2.25, -0.5) {$Y$};
+		\node [style=none] (66) at (0, 0) {$\longrightarrow$};
+		\node [style=gate] (73) at (-2.25, 0.5) {$X$};
+		\node [style=none] (74) at (3.5, 0.5) {};
+		\node [style=none] (75) at (2, 0.5) {};
+		\node [style=none] (76) at (3.5, -0.5) {};
+		\node [style=none] (77) at (2, -0.5) {};
+		\node [style=gate] (78) at (2.75, 0.5) {$Y$};
+		\node [style=gate] (79) at (2.75, -0.5) {$X$};
+		\node [style=none] (80) at (1.5, -0.5) {};
+		\node [style=none] (81) at (1.5, 0.5) {};
+		\node [style=none] (83) at (4, 0.5) {};
+		\node [style=none] (84) at (4, -0.5) {};
+		\node [style=none] (85) at (-1.75, 0.75) {$i$};
+		\node [style=none] (86) at (-1.75, -0.25) {$j$};
+		\node [style=none] (87) at (3.25, -0.25) {$i$};
+		\node [style=none] (88) at (3.25, 0.75) {$j$};
+		\node [style=none] (89) at (0, 0.5) {$i > j$};
+		\node [style=none] (90) at (-2.25, 1.25) {$p$};
+		\node [style=none] (91) at (1.75, 1.25) {$p-1$};
+		\node [style=none] (92) at (2.75, 1.25) {$p$};
+		\node [style=none] (93) at (3.75, 1.25) {$p+1$};
+	\end{pgfonlayer}
+	\begin{pgfonlayer}{edgelayer}
+		\draw (20.center) to (21.center);
+		\draw (36.center) to (37.center);
+		\draw (37.center) to (37.center);
+		\draw (74.center) to (75.center);
+		\draw (76.center) to (77.center);
+		\draw (77.center) to (77.center);
+		\draw (81.center) to (77.center);
+		\draw (80.center) to (75.center);
+		\draw (83.center) to (76.center);
+		\draw (84.center) to (74.center);
+		\draw (89.center) to (89.center);
+		\draw (89.center) to (89.center);
+	\end{pgfonlayer}
+\end{tikzpicture}
