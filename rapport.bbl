@@ -3,7 +3,19 @@
 \providecommand{\urlprefix}{URL }
 \providecommand{\doi}[1]{https://doi.org/#1}
 
+\bibitem{hypergraphs}
+Bonchi, F., Gadducci, F., Kissinger, A., Sobocinski, P., Zanasi, F.: {String} diagram rewrite theory {II}: {Rewriting} with symmetric monoidal structure. Mathematical Structures in Computer Science  \textbf{32}(4),  511--541 (April 2022), \url{http://dx.doi.org/10.1017/S0960129522000317}
+
+\bibitem{terms}
+Cailler, J., Delorme, N., Perdrix, S., Tourret, S.: {Towards} {Term-based} {Verification} of {Diagrammatic} {Equivalence} (2026), \url{https://arxiv.org/abs/2602.11035}
+
 \bibitem{qccompleteness}
 Cl{\'e}ment, A., Heurtel, N., Mansfield, S., Perdrix, S., Valiron, B.: A complete equational theory for quantum circuits. In: Proceedings of the 38th Annual ACM/IEEE Symposium on Logic in Computer Science (LICS) (2023). \doi{10.1109/LICS56636.2023.10175801}, \url{https://arxiv.org/abs/2206.10577}
+
+\bibitem{portgraphs}
+Mondada, L., Andr\'{e}s-Mart\'{i}nez, P.: {Scalable} {Pattern} {Matching} in {Computation} {Graphs}. Electronic Proceedings in Theoretical Computer Science  \textbf{417},  71--95 (March 2025), \url{http://dx.doi.org/10.4204/eptcs.417.5}
+
+\bibitem{monoidalcat}
+Selinger, P.: {A} {Survey} of {Graphical} {Languages} for {Monoidal} {Categories}, pp. 289--355. Springer Berlin Heidelberg (2010), \url{http://dx.doi.org/10.1007/978-3-642-12821-9_4}
 
 \end{thebibliography}

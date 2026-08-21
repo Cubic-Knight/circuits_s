@@ -53,6 +53,8 @@ literate=
 {Ü}{"U}1 {Ä}{"A}1 {Ö}{"O}1 {ß}{{ss}}1
 }[keywords,comments,strings]%
 
+\definecolor{darkgreen}{rgb}{0.05,0.6,0.3}
+
 \definecolor{keyword1}{rgb}{0.2,0.3,0.6}
 \definecolor{keyword2}{rgb}{0.3,0.6,0.2}
 \definecolor{keyword3}{rgb}{1,0,0}
@@ -94,10 +96,11 @@ literate=
 \newtheorem{example}[definition]{Exemple}
 
 \title{Certificats pour les preuves d'équivalence de circuits avec Isabelle/HOL}
-\date{29 mai 2026}
+\date{juin-juillet 2026}
 \author{Alexis Beaucourt}
 
 \newcommand{\tinyinput}[1]{\scalebox{0.44}{\input{#1}}}
+\newcommand{\halfinput}[1]{\scalebox{0.5}{\input{#1}}}
 \newcommand{\smallinput}[1]{\scalebox{0.75}{\input{#1}}}
 \newcommand{\layer}[3]{L^{\smash{#1}}_{\smash{#2}}(#3)}
 
@@ -132,10 +135,14 @@ literate=
 \section{Introduction}
 
 \subsection{Abstract}
-TODO
 
-\cite{qccompleteness}
-% intro (etat de l'art rapide & motivation)
+Les diagrammes sont fréquemment utilisés à des fins de raisonnement, notamment parce qu'ils apportent une représentation visuelle de l'objet étudié. Malheureusement, les diagrammes ne donnent souvent pas de représentation unique ; la question est alors de déterminer si deux diagrammes sont équivalents.
+
+Comme les raisonnements sur les diagrammes sont souvent longs et composés de petites étapes simples, on souhaiterait un processus entièrement automatique, c'est-à-dire qui décide l'équivalence, et produit une preuve dans le cas positif.
+
+On s'intéressera à un certain type de diagramme, appelé circuit, qui est très utilisé dans la programmation quantique \cite{qccompleteness}. On le définit d'ailleurs dans la partie suivante.
+
+La méthode ici choisie pour décider l'équivalence est celle de \cite{terms} et est explicitée en Section 1.3. Elle considère les circuits comme des termes et réduit ces derniers à une forme normale par un système de réécriture. Il existe cependant d'autres méthodes, qui consistent à voir les circuits comme des graphes \cite{portgraphs} ou des hypergraphes \cite{hypergraphs}. L'avantage de cette méthode par rapport aux autres est qu'elle donne un certificat en cas d'équivalence, sous la forme d'une preuve formelle en Isabelle/HOL.
 
 \subsection{Définition des PRO/PROP}
 
@@ -143,13 +150,762 @@ Chaque circuit $u$ possède un domaine $\dom(u) \in \N$ et un codomaine $\cod(u)
 
 On définit les circuits de $\pro{\Sigma, \mathcal E}$ comme étant les circuits formés à partir des générateurs suivants:
 
-\input{pic/gen.tikz}
+\begin{center}
+    \input{pic/gen.tikz}
+\end{center}
 
 Ainsi que les opérations suivantes:
 
-\input{pic/ops.tikz}
+\begin{center}
+    \input{pic/ops.tikz}
+\end{center}
 
-Cependant, on quotiente le tout par les égalités de $\mathcal E$, en plus des égalités (1) à (5) de la Figure 1
+Cependant, on quotiente le tout par les égalités de $\mathcal E$, en plus des égalités (1) à (5) de la \hyperref[fig:coherencelaws]{\color{blue}{\underline{Figure 1}}}
+
+
+Il est important de noter que l'ordre des fils d'entrée et de sortie est important, dans le sens où il n'est pas permis de les permuter. En particulier:
+
+\begin{center}
+    \input{ex/no_perm_wires.tikz}
+\end{center}
+
+
+On peut ensuite définir les $\prop{\Sigma, \mathcal E}$ comme étant des $\pro{\Sigma \cup \Sigma_0, \mathcal E \cup \mathcal E_0}$, où $\Sigma_0$ contient les générateurs suivants (appelés swaps):
+
+\begin{center}
+    \input{pic/swp.tikz}
+\end{center}
+
+Et les $\mathcal E_0$ sont les égalités (6) à (10) de la \hyperref[fig:coherencelaws]{\color{blue}{\underline{Figure 1}}}
+
+On définit également les permutations, qui sont les $\prop{\varnothing, \varnothing}$, c'est-à-dire les circuits uniquement composés de swaps. Un tel circuit peut donc être réduit à la permutation qu'il opère sur ses entrées.
+
+Pour le restant de ce rapport, on notera $\simeq$ la relation d'équivalence entre deux termes.
+
+
+\subsection{Normalisation des PRO et des Perm}
+
+Afin de décider l'équivalence $t_1 \simeq t_2$, il convient de définir une fonction de normalisation sur les circuits. Cette fonction est de plus exprimée sous forme de système de réécriture, dont on peut prouver qu'il est terminant et confluent.
+
+Pour simplifier les notations, on pose $\layer{k}{\ell}{g} = \textup{id}_k \otimes g \otimes \textup{id}_\ell$
+
+Ainsi que le défaut $\textup{def}(u) = \textup{dom}(u) - \textup{cod}(u)$
+
+
+\begin{theorem}
+    Le système défini en \hyperref[fig:pro_rws]{\color{blue}{\underline{Figure 2}}} est terminant, confluent et met les circuits de $\pro{\Sigma}$ en forme normale.
+\end{theorem}
+\begin{proof}
+    Voir \cite{terms}
+\end{proof}
+
+
+\begin{example}
+    Si on se munit du circuit suivant:
+
+    \begin{center}
+        \smallinput{ex/nf_pro_right.tikz}
+    \end{center}
+    
+    Alors on obtient sa forme normale après application des règles:
+
+    \begin{center}
+        \smallinput{ex/nf_pro_left.tikz}
+    \end{center}
+
+    On remarque en particulier que le circuit en forme normale est découpé en couches contenant chacune une seule porte, et que ces couches sont arrangées de sorte que les portes les plus hautes soient le plus à gauche possible.
+\end{example}
+
+\bigskip
+
+On définit un sorte spéciale de swap $\tau_n = \sigma_{n,1}$
+
+\begin{theorem}
+    Le système composé des règles (R1) jusqu'à (R9) de la \hyperref[fig:pro_rws]{\color{blue}{\underline{Figure 2}}}, ainsi que de celles de la \hyperref[fig:perm_rws]{\color{blue}{\underline{Figure 3}}} est terminant, confluent et met les circuits de $\prop{\varnothing}$ en forme normale.
+\end{theorem}
+\begin{proof}
+    Voir \cite{terms}
+\end{proof}
+
+
+\begin{example}
+    Si on se munit du circuit suivant:
+
+    \begin{center}
+        \smallinput{ex/nf_perm_left.tikz}
+    \end{center}
+
+    Alors on obtient sa forme normale après application des règles:
+
+    \begin{center}
+        \smallinput{ex/nf_perm_right.tikz}
+    \end{center}
+
+    On remarque en particulier que le circuit en forme normale est découpé en couches (comme pour les PRO) contenant chacune un seul $\tau_n$, et que ces couches sont arrangées de sorte que le fil le plus haut modifié par la couche soit strictement décroissant au long du circuit.
+\end{example}
+
+
+\subsection{Contribution}
+
+Durant mon stage, j'ai implémenté l'algorithme produisant les certifiats d'équivalence pour les deux cas déjà traités en théorie par \cite{terms} (les $\pro{\Sigma}$ et les permutations $\prop{\varnothing}$), et j'ai fait des tests de performance pour avoir une idée de leur efficacité.
+
+J'ai aussi trouvé un système de réécriture qui pourrait étendre les deux cas précédant aux $\prop{\Sigma}$, mais je n'ai pas eu le temps durant mon stage de formaliser ce dernier en Isabelle/HOL.
+
+\section{Implémentation des certificats}
+
+\subsection{Le simplificateur d'Isabelle}
+
+En Isabelle/HOL la tactique \lstinline[language=Isar]|simp| permet de modifier (ou prouver) un but en appliquant des règles de réécriture. En particulier, \lstinline[language=Isar]|simp| peut être invoquée sous plusieurs formes:
+\begin{itemize}
+    \item \lstinline[language=Isar]|simp| utilise un ensemble de règles de réécriture par défaut. Cet ensemble est un mix de règles judicieusement choisies par les créateurs de bibliothèques et de règles automatiquement générées par des mots clés comme \lstinline[language=Isar]|function|, \lstinline[language=Isar]|fun|, \lstinline[language=Isar]|inductive|, etc.
+    \item \lstinline[language=Isar]|(simp add: regle1 regle2)| permet à l'utilisateur de rajouter ses propres règles de réécriture dans l'ensemble utilisé par \lstinline[language=Isar]|simp|
+    \item \lstinline[language=Isar]|(simp only: regle1 regle2)| permet à l'utilisateur de ne pas utiliser les règles par défaut, mais seulement celles qu'il choisit
+    \item \lstinline[language=Isar]|(simp cong: regle1 regle2)| permet à l'utilisateur de rajouter des règles de congruence
+\end{itemize}
+
+Les options \lstinline[language=Isar]|add|, \lstinline[language=Isar]|only| et \lstinline[language=Isar]|cong| peuvent être utilisées dans la même invocation de \lstinline[language=Isar]|simp|, par exemple \lstinline[language=Isar]|(simp only: regle1 cong: regle2)| n'utilise que 2 règles, dont une de congruence.
+
+Une règle de réécriture est un lemme (qui doit être démontré dans Isabelle) sous la forme $P_1 \implies \cdots \implies P_n \implies A = B$. Il représente la règle $A \to B \text{ si } P_1, \ldots, P_n$
+
+En pratique, le simplificateur va essayer de prover les conditions $P_1, \ldots, P_n$ en s'appelant récursivement sur chacune des conditions, et réécrire $A$ en $B$ une fois qu'il a réussi. S'il n'arrive pas à prouver une des conditions (parce qu'il n'a pas assez de règles ou bien parce que la condition est fausse), alors il abandonne l'utilisation de cette règle et en essaye d'autres.
+
+Une règle de congruence est un lemme de la forme $P_1 \implies \cdots \implies P_n \implies f(x) = f(y)$. Elle s'applique avant les règles de réécriture, dès que le simplificateur reconnaît que les deux côtés de l'égalité commencent par $f$. De plus, les règles de congruence se distinguent des règles de réécriture par le fait qu'il ne s'agit pas ici de remplacer $f(x)$ par $f(y)$, mais de prouver $f(x) = f(y)$.
+
+Par exemple, si $f$ est une fonction paire, on peut avoir la règle de congruence $x = -y \implies f(x) = f(y)$, ce qui permet au simplificateur de démontrer $f(-3) = f(3)$
+
+Si le simplificateur arrive à un terme sur lequel il n'y a pas de règles applicables (ou les seules règles potentiellement applicables ont une condition dont la preuve a échoué), alors il s'arrête. Si de plus il s'arrête sur un terme de la forme \verb|t = t|, alors il considère son but comme démontré.
+
+
+Pour la certification d'équivalence de circuits, il est judicieux d'utiliser \verb|simp|, car notre forme normale est calculée à l'aide de règles de réécriture. Cependant, les règles de réécriture indiquées ci-dessus ne sont pas suffisantes pour le bon fonctionnement de \verb|simp|. En effet, il lui faut aussi:
+
+\begin{itemize}
+    \item des règles pour évaluer certaines fonctions ($\dom, \cod, \ldots$)
+    \item des règles pour faire de l'arithmétique sur les entiers naturels
+    \item des règles pour traiter des inégalités sur les entiers naturels
+    \item des règles pour évaluer des opérations booléennes
+\end{itemize}
+
+Il est aussi nécessaire d'écrire les règles d'une manière appropriée pour \verb|simp|: une règle comme $f(n+1) = g(n)$ ne s'applique pas sur $f(13)$, mais sur $f(12+1)$. Il convient de prendre à la place une règle comme $n \ge 1 \implies f(n) = g(n-1)$
+
+Il est également important de prendre en compte la difficulté posée par la soustraction sur les entiers naturels. En effet, si $n \ge m$, $m - n$ est définit comme étant $0$. Par exemple, \verb|1 - 2 = 0| peut être démontré en Isabelle. Il faut donc exprimer $n - m$ par \verb|nat (int n - int m)| (\verb|int| est l'injection des naturels dans les entiers relatifs)
+
+\medskip
+
+Un autre obstacle rencontré est le fait que on a besoin de deux règles de congruence:
+
+\vspace{-1em}
+
+\begin{equation}
+    \nf(u_1) = \nf(v_1) \implies \nf(u_2) = \nf(v_2) \implies \nf(u_1 \otimes u_2) = \nf(v_1 \otimes v_2)
+    \label{cong:par}
+    \tag{par\_cg}
+\end{equation}
+
+\vspace{-2em}
+
+\begin{equation}
+    \nf(u_1) = \nf(v_1) \implies \nf(u_2) = \nf(v_2) \implies \nf(u_1 \fatsemi u_2) = \nf(v_1 \fatsemi v_2)
+    \label{cong:seq}
+    \tag{seq\_cg}
+\end{equation}
+
+
+Cependant, Isabelle refuse d'appliquer les deux règles dans le même appel à simp (je pense que c'est parce que le simplificateur ne regarde que la tête du terme, et ne prend qu'une seule règle de congruence par tête, or les deux termes commencent par $\nf$). En effet, un appel à \lstinline[language=Isar]|(simp [...] cong: par_cg seq_cg)| n'applique que la règle \lstinline[language=Isar]|par_cg|, et un appel à \lstinline[language=Isar]|(simp [...] cong: seq_cg par_cg)| n'applique que la règle \lstinline[language=Isar]|seq_cg|.
+
+
+J'ai contourné ce problème en utilisant des \verb|congproc| (ou procédures de congruence). Il est alors possible de donner un pattern plus sophistiqué pour chaque règle.
+
+Par exemple, pour la règle \verb|seq_cg|, j'ai écrit la règle
+
+
+\begin{lstlisting}[language=Isar]{}
+simproc_setup passive weak_congproc cong_seq (\<open>NF (Seq x y)\<close>) =
+    \<open>(K (K (K (SOME @{thm seq_cg [cong_format]}))))\<close>
+\end{lstlisting}
+
+Dans le code ci-dessus, une \verb|simproc| (procédure de simplification) nommée \verb|cong_seq| est définie. Le mot clé \lstinline[language=Isar]|weak_congproc| sert à déclarer que cette procédure est en réalité une procédure de congruence, et la partie \verb|weak| signale à isabelle que cette procédure ne s'occupe pas de simplifier l'intérieur du terme.
+
+La partie \lstinline[language=Isar]|\<open>NF (Seq x y)\<close>| indique à Isabelle que cette procédure doit être invoquée lorsque le simplificateur essaie de prouver \lstinline[language=Isar]|NF (Seq x1 x2) = NF (Seq y1 y2)| (où  la fonction \lstinline[language=Isar]|Seq u v| représente $u \fatsemi v$). Cela permet notamment de la distinguer de l'autre règle qui doit être appliquée sur \lstinline[language=Isar]|\<open>NF (Par x y)\<close>|
+
+L'expression \verb|(K (K (K (SOME @{thm seq_cg [cong_format]}))))| est l'équivalent d'une fonction OCaml \verb|fun _ -> fun _ -> fun _ -> Some seq_cq| qui renvoie le théorème correspondant à la règle de congruence voulue. Il est possible de renvoyer un théorème qui dépend des trois arguments, mais ce n'est ici pas nécessaire.
+
+\subsection{Equivalence des PRO}
+
+Pour la simplification des $\pro{\Sigma}$, on utilise l'ensemble de règles de simplification suivant:
+
+\begin{lstlisting}[language=Isar]{}
+lemmas PRO_simps =
+  R1_NF R2_NF R3_NF R4_NF R5_NF R6_NF R7_NF R8_NF R9_NF R10_NF R11_NF
+
+  admissible.intros              (* rules for admissibility *)
+  dom.simps cod.simps def.simps  (* rules for dom, cod & def *)
+  trm.disc(5-8)                  (* rules for is_Id *)
+
+  arith_simps                       (* rules for arithmetic *)
+  of_nat_0 of_nat_1 of_nat_numeral  (* rules for int *)
+  nat_0 nat_numeral                 (* rules for nat *)
+  num1                              (* rule to handle 1 *)
+
+  rel_simps(1-71)                (* rules for integer inequalities *)
+  simp_thms                      (* rules for boolean calculus *)
+\end{lstlisting}
+
+où les règles \verb|R1_NF| jusqu'à \verb|R11_NF| sont les règles de réduction définies en \hyperref[fig:pro_rws]{\color{blue}{\underline{Figure 2}}}, et les autres règles permettent l'évaluation de fonction et le calcul sur les entiers et les booléens
+
+J'ai également écrit une preuve pour certifier l'équivalence entre deux termes $t_1$ et $t_2$:
+
+\begin{lstlisting}[language=Isar]{}
+lemma \<open>NF t1 = NF t2\<close>
+proof -
+  have pre_eq: \<open>NF (preproc t1) = NF (preproc t2)\<close>
+    apply (simp only: preproc.simps)
+    including no_limit by (simp only: PRO_simps [[simproc cong_par cong_seq]])?
+  have t1_pre: \<open>NF (preproc t1) = NF t1\<close> using pre by blast
+  have t2_pre: \<open>NF (preproc t2) = NF t2\<close> using pre by blast
+  show ?thesis
+    using t1_pre t2_pre pre_eq by argo
+
+qed
+\end{lstlisting}
+
+Plusieurs détails sont ici importants:
+
+\begin{itemize}
+    \item La fonction \lstinline[language=Isar]|preproc| rajoute quelques circuits vides ($\textup{id}_0$) pour éviter quelques cas problématiques
+    \item \lstinline[language=Isar]|including no_limit| permet à la tactique \lstinline[language=Isar]|simp| d'aller à profondeur très grande dans le résultat (pour que \lstinline[language=Isar]|simp| n'abandonne pas sa simplification)
+    \item Le point d'interrogation présent à la fin de la ligne 5 permet de gérer correctement le cas où les termes $t_1$ et $t_2$ sont exactement égaux. Dans ce cas, le but est déjà résolu à la ligne 4, et la ligne 5 n'est plus nécessaire.
+\end{itemize}
+
+Par ailleurs, j'ai défini \lstinline[language=Isar]|no_limit| comme:
+
+\begin{lstlisting}[language=Isar]{}
+bundle no_limit = [[simp_depth_limit=10000]]
+\end{lstlisting}
+
+Le nombre $10000$ doit être choisi assez grand pour pouvoir être sûr de que \lstinline[language=Isar]|simp| n'abandonne pas.
+
+\subsection{Equivalence des permutations}
+
+De même, pour les Perm, on utilise cet ensemble de règles:
+
+\begin{lstlisting}[language=Isar]{}
+lemmas PRO_Perm_simps =
+  R1_to_perm  R2_to_perm  R3_to_perm  R4_to_perm  R5_to_perm
+  R6_to_perm  R7_to_perm  R8_to_perm  R9_to_perm  R12_to_perm
+  R13_to_perm R14_to_perm R15_to_perm_simp  R16_to_perm_simp
+  R17_to_perm_simp  R18_to_perm_simp  R19_to_perm_simp
+  R20_to_perm_simp  R21_to_perm_simp  R22_to_perm_simp
+
+  sadmissible.intros             (* rules for admissibility *)
+  dom.simps cod.simps def.simps  (* rules for dom, cod & def *)
+  trm.disc                       (* rules for is_Id *)
+
+  arith_simps                       (* rules for arithmetic *)
+  of_nat_0 of_nat_1 of_nat_numeral  (* rules for int *)
+  nat_0 nat_numeral                 (* rules for nat *)
+  num1                              (* rule to handle 1 *)
+
+  rel_simps                      (* rules for integer inequalities *)
+  simp_thms                      (* rules for boolean calculus *)
+\end{lstlisting}
+
+où les règles \verb|R1_to_perm| jusqu'à \verb|R22_to_perm_simp| sont les règles de réduction du système défini en \hyperref[fig:pro_rws]{\color{blue}{\underline{Figure 2}}} et \hyperref[fig:perm_rws]{\color{blue}{\underline{Figure 3}}}, et les autres règles permettent l'évaluation de fonction et le calcul sur les entiers et les booléens.
+
+Et pour certifier l'équivalence entre deux termes $t_1$ et $t_2$:
+
+\begin{lstlisting}[language=Isar]{}
+lemma \<open>CF \<lbrakk>t1\<rbrakk> = CF \<lbrakk>t2\<rbrakk>\<close>
+proof -
+  have pre_eq: \<open>\<lbrakk>preproc t1\<rbrakk> = \<lbrakk>preproc t2\<rbrakk>\<close>
+    apply (simp only: preproc.simps)
+    including no_limit by (simp only: PRO_Perm_simps [[simproc cong_perm_par cong_perm_seq]])?
+  have \<open>sadmissible t1\<close> including no_limit by (simp only: PRO_Perm_simps)
+  also have \<open>sadmissible t2\<close> including no_limit by (simp only: PRO_Perm_simps)
+  ultimately have \<open>\<lbrakk>t1\<rbrakk> = \<lbrakk>t2\<rbrakk>\<close>
+    using pre_eq perm_preproc[of t1] perm_preproc[of t2] by argo
+  then show ?thesis by argo
+
+qed
+\end{lstlisting}
+
+Ici, le prédicat \verb|sadmissible| représente le fait qu'un circuit est bien formé, i.e. que $\cod(u) = \dom(v)$ lorqu'on a $u \fatsemi v$
+
+\section{Tests de performance}
+
+\subsection{Méthodologie}
+
+Pour tester la rapidité de certification de circuits, des circuits ont été générés. Pour cela un script qui génère des paires de circuits équivalents (merci à Julie Cailler pour celui-ci) a été utilisé. Les paires ainsi générées sont ensuite classés par taille et regroupés en lots de 50 en 50 (c'est-à-dire un lot pour les tailles de 0 à 49, un pour les tailles de 50 à 99, etc...), où la taille est définie par le nombre de $\otimes$ et de $\fatsemi$ dans les 2 circuits.
+
+Ensuite, sont générés pour chaque lot de taille un ensemble de 50 exemples en les tirant au hasard (avec remplacement).
+
+Isabelle est ensuite lancée sur les 50 exemples en même temps (ce qui permet à Isabelle de potentiellement paralléliser ses calculs) et le temps final d'exécution est récupéré.
+
+Le script permettant de générer les circuits est un script aléatoire et ne permet pas de contrôler la taille de sortie des circuits. De plus, pour les très grands circuits, le script peut prendre beaucoup de temps. Pour cette raison, le nombre d'exemples générés dépend de la taille.
+
+Un des problèmes de cette méthode est que la précision de la mesure dépend beaucoup du nombre d'exemples générés: s'il y en a plus de 200, la répartition est proche de l'uniforme, mais lorsqu'il y en a moins que 10, des biais peuvent exister. Il faut donc s'attendre à ce que les tests soient moins précis lorque les circuits sont plus grands (les exemples étant plus longs à générer, on en possède moins)
+
+Un autre problème qui perturbe la mesure est que Isabelle a besoin de s'initialiser et de lire les fichiers qui établissent la théorie permettant de faire la preuve. Ceci prend un temps constant (car ces fichiers ne dépendent pas du circuit testé) qui devrait être assez peu significatif, puisqu'il n'y a qu'une seule étape d'initialisation pour les 50 exemples.
+
+Il est également important de noter qu'Isabelle a pu tourner en parallèle sur 8 threads, ce qui lui permet de traiter plusieurs circuits en même temps.
+
+Tous les exemples ont été lancés sur Grid5000 (\href{https://www.grid5000.fr/w/Grid5000:Home}{\color{blue}{\underline{lien}}}), effectués sans qu'il y ait d'autres processus en même temps, et tous les tests appartenant à une même famille ont été réalisés durant la même session.
+
+\subsection{Résultats pour les PRO}
+
+Le nombre d'exemples générés chute très rapidement à partir de la taille 500, du fait du temps de génération.
+
+Le graphe ci-dessous montre le nombre d'exemples générés en fonction de la catégorie. Pour aider à la lisibilité, l'axe des ordonnées est ici logarithmique.
+
+\begin{tikzpicture}
+    \begin{semilogyaxis}[
+        title={Nombre d'exemples générés par catégorie},
+        xlabel={Catégorie},
+        ylabel={Nombre d'exemples générés},
+        xmin=-20, xmax=620,
+        ymin=0.7, ymax=400,
+        xtick={0,50,100,150,200,250,300,350,400,450,500,550,600},
+        ytick={1,10,100},
+        % legend pos=north west,
+        ymajorgrids=true,
+        grid style=dashed,
+        height=7.5cm,
+        width=0.9\linewidth
+    ]
+
+    \addplot[
+        color=blue,
+        mark=square,
+    ]
+    coordinates {
+        (0,182)(50,200)(100,221)(150,196)(200,176)(250,130)(300,112)
+        (350,105)(400,66)(450,71)(500,23)(550,4)(600,1)
+    }
+    [pos segment=0,yshift=10pt,font=\footnotesize]
+        node [pos=0/12] {182}
+        node [pos=1/12] {200}
+        node [pos=2/12] {221}
+        node [pos=3/12] {196}
+        node [pos=4/12] {176}
+        node [pos=5/12] {130}
+        node [pos=6/12] {112}
+        node [pos=7/12] {105}
+        node [pos=8/12] {66}
+        node [pos=9/12] {71}
+        node [pos=10/12] {23}
+        node [pos=11/12] {4}
+        node [pos=12/12] {1};
+        
+    \end{semilogyaxis}
+\end{tikzpicture}
+
+Le graphe ci-dessous montre temps de calcul, également avec l'ordonnée logarithmique. Il est important de noter que la mesure pour la catégorie 600 est probablement imprécise, car on ne dispose que d'un seul exemple (le test s'est donc déroulé avec 50 copies du même exemple, ce qui peut ne pas être représentatif d'un échantillon uniforme).
+
+\begin{tikzpicture}
+    \begin{semilogyaxis}[
+        title={Temps de vérification par catégorie},
+        xlabel={Catégorie},
+        ylabel={Temps de vérification [s]},
+        xmin=-20, xmax=620,
+        ymin=7, ymax=2000,
+        xtick={0,50,100,150,200,250,300,350,400,450,500,550,600},
+        ytick={10,100,1000},
+        % legend pos=north west,
+        ymajorgrids=true,
+        grid style=dashed,
+        height=7.5cm,
+        width=0.9\linewidth
+    ]
+
+    \addplot[
+        color=blue,
+        mark=square,
+    ]
+    coordinates {
+        (0, 20.497)(50, 24.821)(100, 30.193)(150, 41.983)(200, 55.789)
+        (250, 81.608)(300, 109.642)(350, 120.251)(400, 169.195)
+        (450, 231.104)(500, 374.404)(550, 465.433)(600, 1630.060)
+    };
+        
+    \end{semilogyaxis}
+\end{tikzpicture}
+
+\subsection{Résultats pour les permutations}
+
+Ici le nombre d'exemples chute pour les catégories supérieures à 650. Ce nombre est plus grand que pour les PRO car il semble qu'il soit plus simple de générer des circuits de type permutation que des circuits de type PRO.
+
+Comme le graphe précédent, les ordonnées sont ici logarithmiques.
+
+\begin{tikzpicture}
+    \begin{semilogyaxis}[
+        title={Nombre d'exemples générés par catégorie},
+        xlabel={Catégorie},
+        ylabel={Nombre d'exemples générés},
+        xmin=-20, xmax=770,
+        ymin=0.7, ymax=500,
+        xtick={0,50,100,150,200,250,300,350,400,450,500,550,600,650,700,750},
+        ytick={1,10,100},
+        % legend pos=north west,
+        ymajorgrids=true,
+        grid style=dashed,
+        height=7.5cm,
+        width=0.9\linewidth
+    ]
+
+    \addplot[
+        color=blue,
+        mark=square,
+    ]
+    coordinates {
+        (0,250)(50,235)(100,197)(150,205)(200,197)(250,132)(300,123)(350,104)
+        (400,83)(450,81)(500,56)(550,35)(600,21)(650,4)(700,2)(750,1)
+    }
+    [pos segment=0,yshift=10pt,font=\footnotesize]
+        node [pos=0/15] {250}
+        node [pos=1/15] {235}
+        node [pos=2/15] {197}
+        node [pos=3/15] {205}
+        node [pos=4/15] {197}
+        node [pos=5/15] {132}
+        node [pos=6/15] {123}
+        node [pos=7/15] {104}
+        node [pos=8/15] {83}
+        node [pos=9/15] {81}
+        node [pos=10/15] {56}
+        node [pos=11/15] {35}
+        node [pos=12/15] {21}
+        node [pos=13/15] {4}
+        node [pos=14/15] {2}
+        node [pos=15/15] {1};
+        
+    \end{semilogyaxis}
+\end{tikzpicture}
+
+Le temps de calcul pour les permutations semble ne pas croître aussi vite que celui pour les PRO. En conséquence, le graphe ci dessous est donné avec l'axe des ordonnées linéaire et non logarithmique.
+
+Il est important de noter que les points pour les catégories 650, 700 et 750 ne sont probablement pas représentatifs d'un échantillion uniforme, vu leur faible nombre d'exemples.
+
+\begin{tikzpicture}
+    \begin{axis}[
+        title={Temps de vérification par catégorie},
+        xlabel={Catégorie},
+        ylabel={Temps de vérification [s]},
+        xmin=-20, xmax=770,
+        ymin=-50, ymax=1050,
+        xtick={0,50,100,150,200,250,300,350,400,450,500,550,600,650,700,750},
+        ytick={0,100,200,300,400,500,600,700,800,900,1000},
+        % legend pos=north west,
+        ymajorgrids=true,
+        grid style=dashed,
+        height=7.5cm,
+        width=0.9\linewidth
+    ]
+
+    \addplot[
+        color=blue,
+        mark=square,
+    ]
+    coordinates {
+        (0, 16.950)(50, 80.245)(100, 65.545)(150, 146.935)
+        (200, 241.864)(250, 267.352)(300, 296.208)(350, 361.194)
+        (400, 430.655)(450, 466.028)(500, 557.132)(550, 666.792)
+        (600, 828.486)(650, 843.943)(700, 805.531)(750, 989.654)
+    };
+        
+    \end{axis}
+\end{tikzpicture}
+
+\section{Extension aux PROP}
+
+Afin d'espérer pouvoir obtenir un résultat similaire sur les $\prop{\Sigma, \varnothing}$, on veut définir une forme normale.
+
+\begin{remark}
+    Comme les $\prop{\Sigma}$ sont des $\pro{\Sigma \cup \Sigma_0}$ (avec des générateurs supplémentaires), on peut tout à fait appliquer la fonction de normalisation des $\pro{\Sigma \cup \Sigma_0}$ sur les $\prop{\Sigma}$, ce qui donne un circuit séparé en couches.
+
+    Celà revient, en outre, à considérer que les swap sont des générateurs quelconques (des boîtes noires, en quelque sorte) et à effectuer le processus de normalisation des $\pro{\Sigma \cup \Sigma_0}$ dessus.
+
+    On considèrera donc pendant toute cette partie que les circuits sur lesquels on travaille sont déjà séparés en couches.
+\end{remark}
+
+\subsection{Numérotation}
+
+Pour aider à définir une forme normale, on va ajouter des informations à notre circuit.
+
+Cela permet de donner des informations globales sur le circuit de manière locale.
+
+\begin{remark}
+    On peut voir un circuit comme un graphe, dont les noeuds sont les portes et les arêtes sont les fils (orientées de gauche à droite), avec un ordre sur les arêtes.
+
+    Etant donné un circuit $t$, on note son graphe correspondant $G(t)$
+\end{remark}
+
+\begin{theorem}
+    $t_1 \simeq t_2 \leqv G(t_1) = G(t_2)$
+\end{theorem}
+\begin{proof}
+    C'est le théorème de cohérence (théorème 3.12) de \cite{monoidalcat}
+\end{proof}
+
+\begin{corollary}
+    Toute quantité qui ne dépend que de $G(t)$ est invariante pour toute la classe d'équivalence de $t$
+\end{corollary}
+
+\begin{definition}
+    On définit la profondeur $\rho(u)$ d'une porte $u \in \Sigma$ dans un circuit comme étant le nombre maximal de portes traversées vers la gauche.
+
+    Autrement dit, si les portes précédant $v$ sont $u_1, \ldots u_n$, alors
+    \[ \rho(v) = \begin{cases}
+        0 & \text{si } n=0\\
+        1+\max_{1\le i\le n} \rho(u_i) & \text{sinon}
+    \end{cases} \]
+\end{definition}
+
+\begin{example}
+    \label{ex:depth}
+
+    Voir la \hyperref[ann:depth]{\color{blue}{\underline{Section 7.1}}}
+\end{example}
+
+\begin{lemma}
+    Comme la notion de "précéder" ne dépend que du graphe sous-jacent, la profondeur ainsi définie est indépendante de l'élément de la classe d'équivalence choisie.
+\end{lemma}
+
+\begin{definition}
+    On note la "vraie profondeur" $p(v)$ d'un générateur (c'est-à-dire une prote ou bien un swap) par l'équation suivante:
+    \[
+    p(v) = \begin{cases}
+        2 \times \rho(v) + 1 & \text{si } v \text{ est une porte}\\
+        2 \times \max_{1\le i\le n} \rho(u_i) & \text{si } v \text{ est un swap et } (u_i)_i \text{ les portes le précédant}
+    \end{cases}
+    \]
+\end{definition}
+
+\begin{example}
+    \label{ex:true_depth}
+
+    Voir la \hyperref[ann:true_depth]{\color{blue}{\underline{Section 7.2}}}
+\end{example}
+
+\begin{remark}
+    Avec cette notion de profondeur, les swaps ont toujours une profondeur paire tandis que les portes ont toujours une profondeur impaire. Ainsi, un swap et une porte n'ont jamais la même profondeur.
+\end{remark}
+
+\begin{definition}
+    On définit la priorité d'un fil en faisant un parcours en profondeur sur le graphe. On obtient ainsi un ordre topologique sur les fils.
+\end{definition}
+
+\begin{example}
+    \label{ex:prio}
+
+    Voir la \hyperref[ann:prio]{\color{blue}{\underline{Section 7.3}}}
+\end{example}
+
+\begin{lemma}
+    Comme cet ordre ne dépend que du graphe sous-jacent, il est équivalent pour tout élément de la classe d'équivalence.
+\end{lemma}
+
+\begin{lemma}
+    On peut donc munir un circuit des profondeurs et des priorités sans toutefois modifier les classes d'équivalence.
+\end{lemma}
+
+\subsection{Forme normale}
+
+\begin{definition}
+    On dit d'un circuit (annoté) est en forme normale si et seulement si:
+    \begin{itemize}
+        \item la profondeur de ses couches successives est croissante
+        \item pour deux couches de même profondeur qui se suivent et contenant des portes, la porte dont les fils de sortie ont la priorité la plus faible se trouve avant.
+        \item pour une profondeur paire donnée (cela ne concerne donc que les swaps), l'ensemble des couches de cette profondeur représente une permutation qui est en forme normale selon la fonction de normalisation des permutations.
+    \end{itemize}
+\end{definition}
+
+\begin{example}
+    \label{ex:nf}
+
+    Voir la \hyperref[ann:nf]{\color{blue}{\underline{Section 7.4}}}
+\end{example}
+
+\begin{lemma}
+    La forme normale existe, et est unique.
+    
+    i.e. si $t$ est un circuit, il existe un unique circuit $t' \simeq t$ tel que $t'$ est en forme normale.
+\end{lemma}
+\begin{proof}
+    Existence: On peut construire la forme normale à l'aide du graphe $G(t)$.
+
+    En effet, il suffit d'itérer sur chaque profondeur, et de trier les priorité des portes qui s'y trouvent. Cela force les permutations entre ces portes, qui peuvent être construites en prenant un circuit qui représente cette permutation et en lui applicant la forme normale des permutations.
+
+    Unicité: Il n'y a qu'une seule manière d'arranger les portes pour chaque profondeur (selon les priorités).
+
+    De plus, à une profondeur donnée, les swap n'ont qu'un seul arrangement possible (par l'unicité de la forme normale des permutations)
+
+    La forme normale ainsi définie est donc unique
+\end{proof}
+
+\begin{definition}
+    On note $\nf$ la procédure qui transforme $t$ en forme normale.
+\end{definition}
+
+\begin{property}
+    $\nf(\nf(t)) = \nf(t)$
+\end{property}
+\begin{proof}
+    Par définition de $\nf$, on a $\forall u, \nf(u) \simeq u$
+
+    Par unicité de la forme normale, comme $\nf(t)$ est en forme normale, on a bien $\nf(\nf(t)) = \nf(t)$
+\end{proof}
+
+\begin{lemma}
+    $t_1 \simeq t_2 \leqv \nf(t_1) = \nf(t_2)$
+\end{lemma}
+\begin{proof}
+    Par unicité de la forme normale.
+\end{proof}
+
+\subsection{Système de réécriture}
+
+\begin{definition}
+    On pose le système de réécriture suivant sur les circuits numérotés
+
+    \begin{center}
+        \input{pic/swap_gates.tikz}
+    \end{center}
+    où $i,j$ sont les priorités des fils sortants et les portes $X$ et $Y$ sont à la profondeur $p$
+
+    \begin{center}
+        \smallinput{pic/through_perm1.tikz}
+    \end{center}
+    où $\sigma$ est une permutation et $p_1$, $p_2$ des profondeurs
+    
+    \begin{center}
+        \smallinput{pic/through_perm2.tikz}
+    \end{center}
+    où $\sigma$ est une permutation et $p_1$, $p_2$ des profondeurs
+
+    Ce système est très intuitif dans le sens qu'il n'est pas assez formel pour être utilisé par la machine, mais il est toutefois possible de raisonner sur ce système graphiquement. En particulier, ce système demande sans l'expliciter de faire "coulisser" les portes de plus faible priorité vers la gauche. Une version plus formelle de ce système est décrite ci-dessous, même si elle pert le côté "intuition graphique"
+\end{definition}
+
+\begin{lemma}
+    Tout circuit qui n'est pas en forme normale possède au moins une règle applicable
+\end{lemma}
+\begin{proof}
+    Supposons qu'aucune règle ne soit applicable.
+
+    Comme les règles 2 et 3 ne sont pas applicables, les portes sont triées par profondeur croissante.
+
+    Les portes adjacentes sont alors de même profondeur, i.e. la règle 1 s'applique si et seulement si il existe 2 portes adjacentes de priorité décroissante (de haut en bas)
+
+    Or la règle 1 ne s'applique pas, d'où les portes sont triées par profondeur et par priorité.
+
+    Le circuit est donc en forme normale.
+\end{proof}
+
+\begin{lemma}
+    Le système est terminant
+\end{lemma}
+\begin{proof}
+    Soit $u$ un circuit
+
+    Soit $n$ le nombre d'applications minimal des règles 2 et 3 pour obtenir à partir de $u$ un circuit où toutes les portes sont ordonnées par profondeur
+
+    Soit $m$ le nombre d'applications minimal de la règle 1 pour obtenir à partir de $u$ un circuit où toutes les priorités sont ordonnées.
+
+    On pose alors la mesure $\mu(u) = (n,m)$, avec l'ordre lexicographique.
+
+    On remarque que l'application de la règle 2 ou de la règle 3 fait décroître $n$, et que l'application de la règle 1 ne change pas $n$ et fait décroître $m$.
+
+    Comme l'ordre lexicographique sur $\N \times \N$ est un bon ordre, il n'existe pas de suite infinie strictement décroissante de paires d'entiers.
+
+    Le système de réécriture est donc terminant.
+\end{proof}
+
+\begin{lemma}
+    Le système est confluent
+\end{lemma}
+\begin{proof}
+    Soit $t$ un circuit et supposons que l'on a $t_1 \leftarrow t \rightarrow t_2$.
+
+    Comme le système est terminant, il existe $t'_1$ tel que $t_1 \clrt{\rightarrow} t'_1$ et aucune règle ne s'applique à $t'_1$.
+
+    D'après le lemme ci-dessus, $t'_1$ est donc en forme normale, i.e. $t'_1 = \nf(t_1)$.
+
+    On a donc $t_1 \clrt{\rightarrow} \nf(t_1)$
+
+    De même, on a $t_2 \clrt{\rightarrow} \nf(t_2)$
+
+    Or $t_1 \simeq t \simeq t_2$, d'où $\nf(t_1) = \nf(t_2)$
+
+    On a donc bien la confluence du système de réécriture.
+\end{proof}
+
+\begin{remark}
+    La règle 1 peut être remplacée par les 3 règles
+
+    \begin{tabular}{c c}
+        \\
+        \smallinput{pic/gate_swap_up.tikz}
+        &
+        \smallinput{pic/gate_swap_down.tikz}
+        \\
+        \\
+        \multicolumn{2}{c}{
+            \smallinput{pic/wire_swap.tikz}
+        }
+        \\
+    \end{tabular}
+
+    où $Y$ est une porte, $i, j$ sont les priorités des fils sortants et $p$ est la profondeur de la couche considérée.
+
+    Note: Pour la troisième règle, la position de la porte $Y$ par rapport aux fils considérés n'est pas importante, donc cette règle s'applique aussi si la porte $Y$ se trouve au dessus des fils de priorité $i$ et $j$
+\end{remark}
+
+\begin{remark}
+    Les règles 2 et 3 peuvent être remplacées par les 4 règles
+
+    \begin{tabular}{c c}
+        \\
+        \smallinput{pic/gate_exch1.tikz}
+        &
+        \smallinput{pic/gate_exch2.tikz}
+        \\
+        \\
+        \smallinput{pic/through_tobo1.tikz}
+        &
+        \smallinput{pic/through_tobo2.tikz}
+        \\
+    \end{tabular}
+
+    où les boîtes vides représentent des swaps ou des portes, et les boîtes nommés $X$ représentent des portes uniquement. De plus, $p_1$ et $p_2$ représentent ici les profondeurs des couches considérées.
+
+\end{remark}
+
+\begin{definition}
+    On pose le système de réécriture (formel) sur les circuits numérotés composé des 7 règles décrites ci-dessus, ainsi que des règles R14 à R22 des permutations (voir Figure 3)
+\end{definition}
+
+\begin{remark}
+    Je n'ai pas démontré la terminaison du système formel, mais la terminaison du système intuitif donne une bonne indication que le système que j'ai ici décrit est effectivement terminant
+\end{remark}
+
+\section{Conclusion}
+
+Il reste sur le sujet plusieurs choses à faire, comme formaliser le système de réécriture en Isabelle, prouver sa terminaison et sa confluence, et enfin implémenter le certificat permettant de décider l'équivalence des $\prop{\Sigma}$.
+
+Une possible extension de ce système pourrait également accomoder les termes de la forme $\sigma_{n,m}$, où $n$ et $m$ sont des variables et non des entiers fixés.
+
+\section{Remerciments}
+
+Je voudrais remercier mon encadrante de stage (Sophie Tourret), les autres personnes travaillant sur le sujet pour leur indications et appréciations (Julie Cailler et Noé Delorme), toute l'équipe VERIDIS m'ayant accueilli au laboratoire, et le laboratoire LORIA.
+
+Je remercie aussi Grid5000 pour m'avoir permis de faire tourner mes tests de performance.
+
+
+\bibliographystyle{splncs04}
+\bibliography{ref}
+
+
+\newpage
+
+\section{Annexes}
 
 
 \begin{figure}[h]
@@ -254,35 +1010,6 @@ Cependant, on quotiente le tout par les égalités de $\mathcal E$, en plus des 
     }
 \end{figure}
 
-
-Il est important de noter que l'ordre des fils d'entrée et de sortie est important dans le sens où il n'est pas permis de les permuter. En particulier:
-
-\input{ex/no_perm_wires.tikz}
-
-
-On peut ensuite définir les $\prop{\Sigma, \mathcal E}$ comme étant des $\pro{\Sigma \cup \Sigma_0, \mathcal E \cup \mathcal E_0}$, où $\Sigma_0$ contient:
-
-\input{pic/swp.tikz}
-
-Et les $\mathcal E_0$ sont les égalités (6) à (10) de la Figure 1
-
-On définit également les permutations, qui sont les $\prop{\varnothing, \varnothing}$, c'est-à-dire les circuits uniquement composés de swaps. Un tel circuit peut donc être réduit à la permutation qu'il opère sur ses entrées
-
-Pour le restant de ce rapport, on notera $\simeq$ la relation d'équivalence entre deux termes.
-
-\newpage
-
-\subsection{Normalisation des PRO et des Perm}
-
-Afin de décider l'équivalence $t_1 \simeq t_2$, il convient de définir une fonction de normalisation sur les circuits. Cette fonction est de plus exprimée sous forme de système de réécriture, dont on prouve qu'il est terminant et confluent.
-
-Pour simplifier les notations, on pose $\layer{k}{\ell}{g} = \textup{id}_k \otimes g \otimes \textup{id}_\ell$
-
-Ainsi que le défaut $\textup{def}(u) = \textup{dom}(u) - \textup{cod}(u)$
-
-
-Pour les $\pro{\Sigma}$, on a le système défini en Figure 2
-
 \newpage
 
 \begin{figure}[h]
@@ -379,25 +1106,6 @@ Pour les $\pro{\Sigma}$, on a le système défini en Figure 2
         Système de réécriture pour les PRO
     }
 \end{figure}
-
-
-\begin{example}
-    Si on se munit du circuit suivant:
-
-    \smallinput{ex/nf_pro_right.tikz}
-    
-    Alors on obtient après application des règles:
-
-    \smallinput{ex/nf_pro_left.tikz}
-
-    On remarque en particulier que le circuit en forme normale est découpé en couches contenant chacune une seule porte, et que ces couches sont arrangées de sorte que les portes les plus hautes soient le plus à gauche possible.
-\end{example}
-
-\bigskip
-
-On définit un sorte spéciale de swap $\tau_n = \sigma_{n,1}$
-
-Pour les $\prop{\varnothing}$, on a le système composé des règles (R1) jusqu'à (R9) de la Figure 2, ainsi que celles définies en Figure 3
 
 \newpage
 
@@ -519,640 +1227,85 @@ Pour les $\prop{\varnothing}$, on a le système composé des règles (R1) jusqu'
     }
 \end{figure}
 
-\begin{example}
-    Si on se munit du circuit suivant:
+\newpage
 
-    \smallinput{ex/nf_perm_left.tikz}
+\subsection{Exemple: profondeur des portes}
+\label{ann:depth}
 
-    Alors on obtient après application des règles:
+On utilisera pour illustrer la notion de profondeur ce circuit:
 
-    \smallinput{ex/nf_perm_right.tikz}
+\begin{center}
+    \input{ex/big_start.tikz}
+\end{center}
 
-    On remarque en particulier que le circuit en forme normale est découpé en couches (comme pour les PRO) contenant chacune un seul $\tau_n$, et que ces couches sont arrangées de sorte que le fil le plus haut modifié par la couche soit strictement décroissant au long du circuit.
-\end{example}
+Pour plus de lisibilité, on l'éclate en couches (c'est-à-dire un seul élément par colonne)
 
+\begin{center}
+    \input{ex/big_expanded.tikz}
+\end{center}
 
-\subsection{Contribution}
+On peut alors annoter les portes à l'aide de leur profondeur:
 
-Durant mon stage, j'ai implémenté l'algorithme produisant les certifiats d'équivalence pour les deux cas déjà traités par mon encadrante (les $\pro{\Sigma}$ et les permutations $\prop{\varnothing}$), et j'ai fait des benchmarks pour avoir une idée de leur efficacité.
+\begin{center}
+    \input{ex/big_first_depth.tikz}
+\end{center}
 
-J'ai aussi trouvé un système de réécriture qui pourrait étendre les deux cas précédant aux $\prop{\Sigma}$, mais je n'ai pas eu le temps durant mon stage de formaliser ce dernier en Isabelle.
+Il faut en particulier noter que la profondeur désigne le nombre maximal de portes à traverser depuis la gauche.
 
-\section{Implémentation des certificats}
+Par exemple, la porte $G$ est bien de profondeur $2$, car elle peut être atteinte en traversant la porte $A$, puis la porte $E$.
 
-\subsection{Le simplificateur d'Isabelle}
+\newpage
 
-En Isabelle/HOL la tactique \lstinline[language=Isar]|simp| permet de modifier (ou prouver) un but en appliquant des règles de réécriture. En particulier, \lstinline[language=Isar]|simp| peut être invoquée sous plusieurs formes:
-\begin{itemize}
-    \item \lstinline[language=Isar]|simp| utilise un ensemble de règles de réécriture par défaut. Cet ensemble est un mix de règles judicieusement choisies par les créateurs de bibliothèques et de règles automatiquement générées par des mots clés comme \lstinline[language=Isar]|function|, \lstinline[language=Isar]|fun|, \lstinline[language=Isar]|inductive|, etc.
-    \item \lstinline[language=Isar]|(simp add: regle1 regle2)| permet à l'utilisateur de rajouter ses propres règles de réécriture dans l'ensemble utilisé par \lstinline[language=Isar]|simp|
-    \item \lstinline[language=Isar]|(simp only: regle1 regle2)| permet à l'utilisateur de ne pas utiliser les règles par défaut, mais seulement celles qu'il choisit
-    \item \lstinline[language=Isar]|(simp cong: regle1 regle2)| permet à l'utilisateur de rajouter des règles de congruence
-\end{itemize}
+\subsection{Exemple: vraie profondeur}
+\label{ann:true_depth}
 
-Les options \lstinline[language=Isar]|add|, \lstinline[language=Isar]|only| et \lstinline[language=Isar]|cong| peuvent être utilisées dans la même invocation de \lstinline[language=Isar]|simp|, par exemple \lstinline[language=Isar]|(simp only: regle1 cong: regle2)| n'utilise que 2 règles, dont une de congruence.
+En reprenant le circuit précédant, on peut donner les vraies profondeurs:
 
-Une règle de réécriture est un lemme (qui doit être démontré dans Isabelle) sous la forme $P_1 \implies \cdots \implies P_n \implies A = B$. Il représente la règle $A \to B \text{ si } P_1, \ldots, P_n$
+\begin{center}
+    \input{ex/big_true_depth.tikz}
+\end{center}
 
-En pratique, le simplificateur va essayer de prover les conditions $P_1, \ldots, P_n$ en s'appelant récursivement sur chacune des conditions, et réécrire $A$ en $B$ une fois qu'il a réussi. S'il n'arrive pas à prouver une des conditions (parce qu'il n'a pas assez de règles ou bien parce que la condition est fausse), alors il abandonne l'utilisation de cette règle et en essaye d'autres.
+Il faut noter que la profondeur des swaps n'influence pas celle des portes.
 
-Une règle de congruence est un lemme de la forme $P_1 \implies \cdots \implies P_n \implies f(x) = f(y)$. Elle s'applique avant les règles de réécriture, dès que le simplificateur reconnaît que les deux côtés de l'égalité commencent par $f$. De plus, les règles de congruence se distinguent des règles de réécriture par le fait qu'il ne s'agit pas ici de remplacer $f(x)$ par $f(y)$, mais de prouver $f(x) = f(y)$.
+Par exemple, la porte $F$ n'est que de profondeur $1$, alors qu'elle suit un swap de profondeur $4$.
 
-Par exemple, si $f$ est une fonction paire, on peut avoir la règle de congruence $x = -y \implies f(x) = f(y)$, ce qui permet au simplificateur de démontrer $f(-3) = f(3)$
+\subsection{Exemple: priorité des fils}
+\label{ann:prio}
 
-Si le simplificateur arrive à un terme sur lequel il n'y a pas de règles applicables (ou les seules règles potentiellement applicables ont une condition dont la preuve a échoué), alors il s'arrête. Si de plus il s'arrête sur un terme de la forme \verb|t = t|, alors il considère son but comme démontré.
+Toujours avec le même exemple, voici le déroulé du parcours en profondeur sur le circuit, ainsi que l'assignation des priorités aux fils (tableau à lire de gauche à droite, ligne par ligne, les différences à chaque étape sont mises en bleu)
 
-
-Pour la certification d'équivalence de circuits, il est judicieux d'utiliser \verb|simp|, car notre forme normale est calculée à l'aide de règles de réécriture. Cependant, les règles de réécriture indiquées ci-dessus ne sont pas suffisantes pour le bon fonctionnement de \verb|simp|. En effet, il lui faut aussi:
-
-\begin{itemize}
-    \item des règles pour évaluer certaines fonctions ($\dom, \cod, \ldots$)
-    \item des règles pour faire de l'arithmétique sur les entiers naturels
-    \item des règles pour traiter des inégalités sur les entiers naturels
-    \item des règles pour évaluer des opérations booléennes
-\end{itemize}
-
-Il est aussi nécessaire d'écrire les règles d'une manière appropriée pour \verb|simp|: une règle comme $f(n+1) = g(n)$ ne s'applique pas sur $f(13)$, mais sur $f(12+1)$. Il convient de prendre à la place une règle comme $n \ge 1 \implies f(n) = g(n-1)$
-
-Il est également important de prendre en compte la difficulté posée par la soustraction sur les entiers naturels. En effet, si $n \ge m$, $m - n$ est définit comme étant $0$ Par exemple, \verb|1 - 2 = 0| peut être démontré en Isabelle. Il faut donc exprimer $n - m$ par \verb|nat (int n - int m)| (on passe par les entiers relatifs)
-
-
-Un autre obstacle rencontré est le fait que on a besoin de deux règles de congruence:
-\begin{equation}
-    \nf(u_1) = \nf(v_1) \implies \nf(u_2) = \nf(v_2) \implies \nf(u_1 \otimes u_2) = \nf(v_1 \otimes v_2)
-    \label{cong:par}
-    \tag{par\_cg}
-\end{equation}
-
-\begin{equation}
-    \nf(u_1) = \nf(v_1) \implies \nf(u_2) = \nf(v_2) \implies \nf(u_1 \fatsemi u_2) = \nf(v_1 \fatsemi v_2)
-    \label{cong:seq}
-    \tag{seq\_cg}
-\end{equation}
-
-Cependant, Isabelle refusait d'appliquer les deux règles dans le même appel à simp (je pense que c'est parce que le simplificateur ne regarde que la tête du terme, et ne prend qu'une seule règle de congruence par tête, or les deux termes commencent par $\nf$). En effet, un appel à \lstinline[language=Isar]|(simp [...] cong: par_cg seq_cg)| n'applique que la règle \lstinline[language=Isar]|par_cg|, et un appel à \lstinline[language=Isar]|(simp [...] cong: seq_cg par_cg)| n'applique que la règle \lstinline[language=Isar]|seq_cg|
-
-
-J'ai contourné ce problème en utilisant des \verb|congproc| (ou procédures de congruence). Il est alors possible de donner un pattern plus sophistiqué pour chaque règle.
-
-Par exemple, pour la règle \verb|seq_cg|, j'ai écrit la règle
-
-
-\begin{lstlisting}[language=Isar]{}
-simproc_setup passive weak_congproc cong_seq (\<open>NF (Seq x y)\<close>) =
-    \<open>(K (K (K (SOME @{thm seq_cg [cong_format]}))))\<close>
-\end{lstlisting}
-
-Dans le code ci-dessus, une \verb|simproc| (procédure de simplification) nommée \verb|cong_seq| est définie. Le mot clé \lstinline[language=Isar]|weak_congproc| sert à déclarer que cette procédure est en réalité une procédure de congruence, et la partie \verb|weak| signale à isabelle que cette procédure ne s'occupe pas de simplifier l'intérieur du terme.
-
-La partie \lstinline[language=Isar]|\<open>NF (Seq x y)\<close>| indique à Isabelle que cette procédure doit être invoquée lorsque le simplificateur essaie de prouver \lstinline[language=Isar]|NF (Seq x1 x2) = NF (Seq y1 y2)|. Cela permet notammment de la distinguer de l'autre règle qui doit être appliquée sur \lstinline[language=Isar]|\<open>NF (Par x y)\<close>|
-
-L'expression \verb|(K (K (K (SOME @{thm seq_cg [cong_format]}))))| est l'équivalent d'une fonction OCaml \verb|fun _ -> fun _ -> fun _ -> Some seq_cq| qui renvoie le théorème correspondant à la règle de congruence voulue. Il est possible de renvoyer un théorème qui dépend des trois arguments, mais ce n'est ici pas nécessaire.
-
-\subsection{Equivalence des PRO}
-
-Pour la simplification des $\pro{\Sigma}$, on utilise l'ensemble de règles de simplification suivant:
-
-\begin{lstlisting}[language=Isar]{}
-lemmas PRO_simps =
-  R1_NF R2_NF R3_NF R4_NF R5_NF R6_NF R7_NF R8_NF R9_NF R10_NF R11_NF
-
-  admissible.intros              (* rules for admissibility *)
-  dom.simps cod.simps def.simps  (* rules for dom, cod & def *)
-  trm.disc(5-8)                  (* rules for is_Id *)
-
-  arith_simps                       (* rules for arithmetic *)
-  of_nat_0 of_nat_1 of_nat_numeral  (* rules for int *)
-  nat_0 nat_numeral                 (* rules for nat *)
-  num1                              (* rule to handle 1 *)
-
-  rel_simps(1-71)                (* rules for integer inequalities *)
-  simp_thms                      (* rules for boolean calculus *)
-\end{lstlisting}
-
-où les règles \verb|R1_NF| jusqu'à \verb|R11_NF| sont les règles de réduction, et les autres règles permettent l'évaluation de fonction et le calcul sur les entiers et les booléens
-
-J'ai également écrit une preuve pour certifier l'équivalence entre deux termes $t_1$ et $t_2$:
-
-\begin{lstlisting}[language=Isar]{}
-lemma \<open>NF t1 = NF t2\<close>
-proof -
-  have pre_eq: \<open>NF (preproc t1) = NF (preproc t2)\<close>
-    apply (simp only: preproc.simps)
-    including no_limit by (simp only: PRO_simps [[simproc cong_par cong_seq]])?
-  have t1_pre: \<open>NF (preproc t1) = NF t1\<close> using pre by blast
-  have t2_pre: \<open>NF (preproc t2) = NF t2\<close> using pre by blast
-  show ?thesis
-    using t1_pre t2_pre pre_eq by argo
-
-qed
-\end{lstlisting}
-
-Plusieurs détails sont ici importants:
-
-\begin{itemize}
-    \item La fonction \lstinline[language=Isar]|preproc| rajoute quelques circuits vides ($\textup{id}_0$) pour éviter quelques cas problématiques
-    \item \lstinline[language=Isar]|including no_limit| permet à la tactique \lstinline[language=Isar]|simp| d'aller à profondeur très grande dans le résultat (pour que \lstinline[language=Isar]|simp| n'abandonne pas sa simplification)
-    \item Le point d'interrogation présent à la fin de la ligne 5 permet de gérer correctement le cas où les termes $t_1$ et $t_2$ sont exactement égaux. Dans ce cas, le but est déjà résolu à la ligne 4, et la ligne 5 n'est plus nécessaire. Le problème est donc qu'à la ligne 5, Isabelle
-\end{itemize}
-
-\subsection{Equivalence des permutations}
-
-De même, pour les Perm, on utilise cet ensemble de règles:
-
-\begin{lstlisting}[language=Isar]{}
-lemmas PRO_Perm_simps =
-  R1_to_perm  R2_to_perm  R3_to_perm  R4_to_perm  R5_to_perm
-  R6_to_perm  R7_to_perm  R8_to_perm  R9_to_perm  R12_to_perm
-  R13_to_perm R14_to_perm R15_to_perm_simp  R16_to_perm_simp
-  R17_to_perm_simp  R18_to_perm_simp  R19_to_perm_simp
-  R20_to_perm_simp  R21_to_perm_simp  R22_to_perm_simp
-
-  sadmissible.intros             (* rules for admissibility *)
-  dom.simps cod.simps def.simps  (* rules for dom, cod & def *)
-  trm.disc                       (* rules for is_Id *)
-
-  arith_simps                       (* rules for arithmetic *)
-  of_nat_0 of_nat_1 of_nat_numeral  (* rules for int *)
-  nat_0 nat_numeral                 (* rules for nat *)
-  num1                              (* rule to handle 1 *)
-
-  rel_simps                      (* rules for integer inequalities *)
-  simp_thms                      (* rules for boolean calculus *)
-\end{lstlisting}
-
-où les règles \verb|R1_to_perm| jusqu'à \verb|R22_to_perm_simp| sont les règles de réduction du système, et les autres règles permettent l'évaluation de fonction et le calcul sur les entiers et les booléens
-
-Et pour certifier l'équivalence entre deux termes $t_1$ et $t_2$:
-
-\begin{lstlisting}[language=Isar]{}
-lemma \<open>CF \<lbrakk>t1\<rbrakk> = CF \<lbrakk>t2\<rbrakk>\<close>
-proof -
-  have pre_eq: \<open>\<lbrakk>preproc t1\<rbrakk> = \<lbrakk>preproc t2\<rbrakk>\<close>
-    apply (simp only: preproc.simps)
-    including no_limit by (simp only: PRO_Perm_simps [[simproc cong_perm_par cong_perm_seq]])?
-  have \<open>sadmissible t1\<close> including no_limit by (simp only: PRO_Perm_simps)
-  also have \<open>sadmissible t2\<close> including no_limit by (simp only: PRO_Perm_simps)
-  ultimately have \<open>\<lbrakk>t1\<rbrakk> = \<lbrakk>t2\<rbrakk>\<close>
-    using pre_eq perm_preproc[of t1] perm_preproc[of t2] by argo
-  then show ?thesis by argo
-
-qed
-\end{lstlisting}
-
-\section{Tests de performance}
-
-\subsection{Méthodologie}
-
-Pour tester la rapidité de certification de circuits, des circuits ont été générés. Pour cela un script qui génère des paires de circuits equivalents a été utilisé. Les paires ainsi générées sont ensuite classés par taille et regroupés en lots de 50 en 50 (c'est-à-dire un lot pour les tailles de 0 à 49, un pour les tailles de 50 à 99, etc...).
-
-La taille est définie par le nombre de $\otimes$ et de $\fatsemi$ dans les 2 circuits.
-
-Ensuite, sont générés pour chaque lot de taille un ensemble de 50 exemples en les tirant au hasard (avec remplacement).
-
-Isabelle est ensuite lancé sur les 50 exemples en même temps (ce qui permet à Isabelle de potentiellement paralléliser ses calculs) et le temps final d'éxécution est récupéré.
-
-Le script permettant de générer les circuits est un script aléatoire et ne permet pas de contrôler la taille de sortie des circuits. De plus, pour les très grands circuits, le script peut prendre beaucoup de temps. Pour cette raison, le nombre d'exemples générés dépend de la taille.
-
-Un des problèmes de cette méthode est que la précision de la mesure dépend beaucoup du nombre d'exemples générés: s'il y en a plus de 200, la répartition est proche de l'uniforme, mais lorsqu'il y en a moins que 10, des biais peuvent exister. Il faut donc s'attendre à ce que les tests soient moins précis lorque les circuits sont plus grands (les exemples étant plus longs à générer, on en possède moins)
-
-Un autre problème qui perturbe la mesure est que Isabelle a besoin de s'initialiser et de lire les fichiers qui établissent la théorie permettant de faire la preuve. Ceci prend un temps constant (car ces fichiers ne dépendent pas du circuit testé) qui devrait être assez peu significatif, puisqu'il n'y a qu'une seule étape d'initialisation pour les 50 exemples.
-
-Il est également important de noter qu'Isabelle a pu tourner en parallèle sur 8 threads, ce qui lui permet de traiter plusieurs circuits en même temps.
-
-Tous les exemples ont été lancés sur [TODO insérer nom ordi], effectués sans qu'il y ait d'autres processus en même temps, et tous les tests appartenant à une même famille ont été réalisés durant la même session.
-
-\subsection{Résultats pour les PRO}
-
-Le nombre d'exemples générés chute très rapidement à partir de la taille 500, du fait du temps de génération.
-
-Le graphe ci-dessous montre le nombre d'exemples générés en fonction de la catégorie. Pour aider à la lisibilité, l'axe des ordonnées est ici logarithmique.
-
-\begin{tikzpicture}
-    \begin{semilogyaxis}[
-        title={Nombre d'exemples générés par catégorie},
-        xlabel={Catégorie},
-        ylabel={Nombre d'exemples générés},
-        xmin=-20, xmax=620,
-        ymin=0.7, ymax=400,
-        xtick={0,50,100,150,200,250,300,350,400,450,500,550,600},
-        ytick={1,10,100},
-        % legend pos=north west,
-        ymajorgrids=true,
-        grid style=dashed,
-        height=7.5cm,
-        width=0.9\linewidth
-    ]
-
-    \addplot[
-        color=blue,
-        mark=square,
-    ]
-    coordinates {
-        (0,182)(50,200)(100,221)(150,196)(200,176)(250,130)(300,112)
-        (350,105)(400,66)(450,71)(500,23)(550,4)(600,1)
-    }
-    [pos segment=0,yshift=10pt,font=\footnotesize]
-        node [pos=0/12] {182}
-        node [pos=1/12] {200}
-        node [pos=2/12] {221}
-        node [pos=3/12] {196}
-        node [pos=4/12] {176}
-        node [pos=5/12] {130}
-        node [pos=6/12] {112}
-        node [pos=7/12] {105}
-        node [pos=8/12] {66}
-        node [pos=9/12] {71}
-        node [pos=10/12] {23}
-        node [pos=11/12] {4}
-        node [pos=12/12] {1};
-        
-    \end{semilogyaxis}
-\end{tikzpicture}
-
-Le temps de calcul est ici également montré avec l'ordonnée logarithmique. Il est important de noter que la mesure pour la catégorie 600 est probablement imprécise, car on ne dispose que d'un seul exemple (le test s'est donc déroulé avec 50 copies du même exemple, ce qui peut ne pas être représentatif d'un échantillon uniforme).
-
-\begin{tikzpicture}
-    \begin{semilogyaxis}[
-        title={Temps de vérification par catégorie},
-        xlabel={Catégorie},
-        ylabel={Temps de vérification [s]},
-        xmin=-20, xmax=620,
-        ymin=7, ymax=2000,
-        xtick={0,50,100,150,200,250,300,350,400,450,500,550,600},
-        ytick={10,100,1000},
-        % legend pos=north west,
-        ymajorgrids=true,
-        grid style=dashed,
-        height=7.5cm,
-        width=0.9\linewidth
-    ]
-
-    \addplot[
-        color=blue,
-        mark=square,
-    ]
-    coordinates {
-        (0, 20.497)(50, 24.821)(100, 30.193)(150, 41.983)(200, 55.789)
-        (250, 81.608)(300, 109.642)(350, 120.251)(400, 169.195)
-        (450, 231.104)(500, 374.404)(550, 465.433)(600, 1630.060)
-    };
-        
-    \end{semilogyaxis}
-\end{tikzpicture}
-
-\subsection{Résultats pour les permutations}
-
-Ici le nombre d'exemples chute pour les catégories supérieures à 650. Ce nombre est plus grand car il est plus simple de générer des circuits de type Perm que des circuits de type PRO.
-
-Comme le graphe précédent, les ordonnées sont ici logarithmiques.
-
-\begin{tikzpicture}
-    \begin{semilogyaxis}[
-        title={Nombre d'exemples générés par catégorie},
-        xlabel={Catégorie},
-        ylabel={Nombre d'exemples générés},
-        xmin=-20, xmax=770,
-        ymin=0.7, ymax=500,
-        xtick={0,50,100,150,200,250,300,350,400,450,500,550,600,650,700,750},
-        ytick={1,10,100},
-        % legend pos=north west,
-        ymajorgrids=true,
-        grid style=dashed,
-        height=7.5cm,
-        width=0.9\linewidth
-    ]
-
-    \addplot[
-        color=blue,
-        mark=square,
-    ]
-    coordinates {
-        (0,250)(50,235)(100,197)(150,205)(200,197)(250,132)(300,123)(350,104)
-        (400,83)(450,81)(500,56)(550,35)(600,21)(650,4)(700,2)(750,1)
-    }
-    [pos segment=0,yshift=10pt,font=\footnotesize]
-        node [pos=0/15] {250}
-        node [pos=1/15] {235}
-        node [pos=2/15] {197}
-        node [pos=3/15] {205}
-        node [pos=4/15] {197}
-        node [pos=5/15] {132}
-        node [pos=6/15] {123}
-        node [pos=7/15] {104}
-        node [pos=8/15] {83}
-        node [pos=9/15] {81}
-        node [pos=10/15] {56}
-        node [pos=11/15] {35}
-        node [pos=12/15] {21}
-        node [pos=13/15] {4}
-        node [pos=14/15] {2}
-        node [pos=15/15] {1};
-        
-    \end{semilogyaxis}
-\end{tikzpicture}
-
-Le temps de calcul pour les Perm semble ne pas croîte aussi vite que celui pour les PRO. En conséquence, le graphe ci dessous est donné avec l'axe des ordonnées linéaire et non logarithmique.
-
-Il est important de noter que les points pour les catégories 650, 700 et 750 ne sont probablement pas représentatifs d'un échantillion uniforme, vu leur faible nombre d'exemples.
-
-\begin{tikzpicture}
-    \begin{axis}[
-        title={Temps de vérification par catégorie},
-        xlabel={Catégorie},
-        ylabel={Temps de vérification [s]},
-        xmin=-20, xmax=770,
-        ymin=-50, ymax=1050,
-        xtick={0,50,100,150,200,250,300,350,400,450,500,550,600,650,700,750},
-        ytick={0,100,200,300,400,500,600,700,800,900,1000},
-        % legend pos=north west,
-        ymajorgrids=true,
-        grid style=dashed,
-        height=7.5cm,
-        width=0.9\linewidth
-    ]
-
-    \addplot[
-        color=blue,
-        mark=square,
-    ]
-    coordinates {
-        (0, 16.950)(50, 80.245)(100, 65.545)(150, 146.935)
-        (200, 241.864)(250, 267.352)(300, 296.208)(350, 361.194)
-        (400, 430.655)(450, 466.028)(500, 557.132)(550, 666.792)
-        (600, 828.486)(650, 843.943)(700, 805.531)(750, 989.654)
-    };
-        
-    \end{axis}
-\end{tikzpicture}
-
-\section{Extension aux PROP}
-
-Afin d'espérer pouvoir obtenir un résultat similaire sur les $\prop{\Sigma, \varnothing}$, on veut définir une forme normale.
-
-\begin{remark}
-    Comme les $\prop{\Sigma}$ sont des $\pro{\Sigma \cup \Sigma_0}$ (avec des générateurs supplémentaires), on peut tout à fait appliquer la fonction de normalisation des $\pro{\Sigma \cup \Sigma_0}$ sur les $\prop{\Sigma}$, ce qui donne un circuit séparé en couches.
-
-    Celà revient, en outre, à considérer que les swap sont des générateurs quelconques (des boîtes noires, en quelque sorte) et à effectuer le processus de normalisation des $\pro{\Sigma \cup \Sigma_0}$ dessus.
-
-    On considèrera donc pendant toute cette partie que les circuits sur lesquels on travaille sont déjà séparé en couches.
-\end{remark}
-
-\subsection{Numérotation}
-
-Pour aider à définir une forme normale, on va ajouter des informations à notre circuit.
-
-Cela permet de donner des informations globales sur le circuit de manière locale.
-
-\begin{remark}
-    On peut voir le circuit comme un graphe (plus précisément un DAG)
-\end{remark}
-
-\begin{theorem}
-    $t_1 \simeq t_2 \leqv G(t_1) = G(t_2)$
-\end{theorem}
-\begin{proof}
-    TODO
-\end{proof}
-
-\begin{corollary}
-    Toute quantité qui ne dépend que de $G(t)$ est invariante pour toute la classe d'équivalence de $t$
-\end{corollary}
-
-\begin{definition}
-    On définit la profondeur $\rho(u)$ d'un générateur $u \in \Sigma$ dans un circuit comme étant le nombre maximal de générateur traversés vers la gauche.
-
-    Autrement dit, si les générateurs précédant $v$ sont $u_1, \ldots u_n$, alors
-    \[ \rho(v) = \begin{cases}
-        0 & \text{si } n=0\\
-        1+\max_{1\le i\le n} \rho(u_i) & \text{sinon}
-    \end{cases} \]
-\end{definition}
-
-\begin{example}
-    TODO
-\end{example}
-
-\begin{lemma}
-    Comme la notion de "précéder" ne dépend que du graphe sous-jacent, la profondeur ainsi définie est indépendante de l'élément de la classe d'équivalence choisie.
-\end{lemma}
-
-\begin{definition}
-    On note la "vraie profondeur" $p(v)$ d'une porte (c'est-à-dire un générateur ou bien un swap) par l'équation suivante:
-    \[
-    p(v) = \begin{cases}
-        2 \times \rho(v) + 1 & \text{si } v \text{ est un générateur}\\
-        2 \times \max_{1\le i\le n} \rho(u_i) & \text{si } v \text{ est un swap et } (u_i)_i \text{ les générateurs le précédant}
-    \end{cases}
-    \]
-\end{definition}
-
-\begin{example}
-    TODO
-\end{example}
-
-\begin{remark}
-    Avec cette notion de profondeur, les swaps ont toujours une profondeur paire tandis que les portes ont toujours une profondeur impaire. Ainsi, un swap et une porte n'ont jamais la même profondeur.
-\end{remark}
-
-\begin{definition}
-    On définit la priorité d'un fil en faisant un parcours en profondeur sur le graphe. On obtient ainsi un ordre topologique sur les fils.
-\end{definition}
-
-\begin{example}
-    TODO
-\end{example}
-
-\begin{lemma}
-    Comme cet ordre ne dépend que du graphe sous-jacent, il est équivalent pour tout élément de la classe d'équivalence.
-\end{lemma}
-
-\begin{lemma}
-    On peut donc munir un circuit des profondeurs et des priorités sans toutefois modifier les classes d'équivalence.
-\end{lemma}
-
-\subsection{Forme normale}
-
-\begin{definition}
-    On dit d'un circuit (annoté) est en forme normale si et seulement si:
-    \begin{itemize}
-        \item la profondeur de ses couches successives est croissante
-        \item pour deux couches de même profondeur qui se suivent et contenant des portes, la porte dont les fils de sortie ont la priorité la plus faible se trouve avant.
-        \item pour une profondeur paire donnée (cela ne concerne donc que les swaps), l'ensemble des couches de cette profondeur représente une permutation qui est en forme normale selon la fonction de normalisation des permutations.
-    \end{itemize}
-\end{definition}
-
-\begin{example}
-    TODO
-\end{example}
-
-\begin{lemma}
-    La forme normale existe, et est unique.
-    
-    i.e. si $t$ est un circuit, il existe un unique circuit $t' \simeq t$ tel que $t'$ est en forme normale.
-\end{lemma}
-\begin{proof}
-    Existence: On peut construire la forme normale à l'aide du graphe $G(t)$.
-
-    En effet, il suffit d'itérer sur chaque profondeur, et de trier les priorité des portes qui s'y trouvent. Cela force les permutations entre ces portes, qui peuvent être construites en prenant un circuit qui représente cette permutation et en lui applicant la forme normale des permutations.
-
-    Unicité: Il n'y a qu'une seule manière d'arranger les portes pour chaque profondeur (selon les priorités).
-
-    De plus, à une profondeur donnée, les swap n'ont qu'un seul arrangement possible (par l'unicité de la forme normale des permutations)
-
-    La forme normale ainsi définie est donc unique
-\end{proof}
-
-\begin{definition}
-    On note $\nf$ la procédure qui transforme $t$ en forme normale.
-\end{definition}
-
-\begin{property}
-    $\nf(\nf(t)) = \nf(t)$
-\end{property}
-\begin{proof}
-    Par définition de $\nf$, on a $\forall u, \nf(u) \simeq u$
-
-    Par unicité de la forme normale, comme $\nf(t)$ est en forme normale, on a bien $\nf(\nf(t)) = \nf(t)$
-\end{proof}
-
-\begin{lemma}
-    $t_1 \simeq t_2 \leqv \nf(t_1) = \nf(t_2)$
-\end{lemma}
-\begin{proof}
-    Par unicité de la forme normale.
-\end{proof}
-
-\subsection{Système de réécriture}
-
-\begin{definition}
-    On pose le système de réécriture suivant sur les circuits numérotés
-
-    \input{pic/swap_gates.tikz} où $i,j$ sont les priorités des fils sortants et les portes $X$ et $Y$ sont à la même profondeur $p$
-
-    \input{pic/through_perm1.tikz} où $\sigma$ est une permutation
-    
-    \input{pic/through_perm2.tikz} où $\sigma$ est une permutation
-
-    Ce système est très intuitif dans le sens qu'il n'est pas assez formel pour être utilisé par la machine, mais il est toutefois possible de raisonner sur ce système graphiquement. En particulier, ce système demande sans l'expliciter de faire "coulisser" les portes de plus faible priorité vers la gauche. Une version plus formelle de ce système est décrite ci-dessous, même si elle pert le côté "intuition graphique"
-\end{definition}
-
-\begin{lemma}
-    Tout circuit qui n'est pas en forme normale possède au moins une règle applicable
-\end{lemma}
-\begin{proof}
-    Supposons qu'aucune règle ne soit applicable.
-
-    Comme les règles 2 et 3 ne sont pas applicables, les portes sont triées par profondeur croissante.
-
-    Les portes adjacentes sont alors de même profondeur, i.e. la règle 1 s'applique si et seulement si il existe 2 portes adjacentes de priorité décroissante (de haut en bas)
-
-    Or la règle 1 ne s'applique pas, d'où les portes sont triées par profondeur et par priorité.
-
-    Le circuit est donc en forme normale.
-\end{proof}
-
-\begin{lemma}
-    Le système est terminant
-\end{lemma}
-\begin{proof}
-    Soit $u$ un circuit
-
-    Soit $n$ le nombre d'applications minimal des règles 2 et 3 pour obtenir à partir de $u$ un circuit où toutes les portes sont ordonnées par profondeur
-
-    Soit $m$ le nombre d'applications minimal de la règle 1 pour obtenir à partir de $u$ un circuit où toutes les priorités sont ordonnées.
-
-    On pose alors la mesure $\mu(u) = (n,m)$, avec l'ordre lexicographique.
-
-    On remarque que l'application de la règle 2 ou de la règle 3 fait décroître $n$, et que l'application de la règle 1 ne change pas $n$ et faite décroître $m$.
-
-    Comme l'ordre lexicographique sur $\N \times \N$ est un bon ordre, il n'existe pas de suite infinie strictement décroissante de paires d'entiers.
-
-    Le système de réécriture est donc terminant.
-\end{proof}
-
-\begin{lemma}
-    Le système est confluent
-\end{lemma}
-\begin{proof}
-    Soit $t$ un circuit et supposons que l'on a $t_1 \leftarrow t \rightarrow t_2$.
-
-    Comme le système est terminant, il existe $t'_1$ tel que $t_1 \clrt{\rightarrow} t'_1$ et aucune règle ne s'applique à $t'_1$.
-
-    D'après le lemme ci-dessus, $t'_1$ est donc en forme normale, i.e. $t'_1 = \nf(t_1)$.
-
-    On a donc $t_1 \clrt{\rightarrow} \nf(t_1)$
-
-    De même, on a $t_2 \clrt{\rightarrow} \nf(t_2)$
-
-    Or $t_1 \simeq t \simeq t_2$, d'où $\nf(t_1) = \nf(t_2)$
-
-    On a donc bien la confluence du système de réécriture.
-\end{proof}
-
-\begin{remark}
-    La règle 1 peut être remplacée par les 3 règles
-
+\begin{center}
     \begin{tabular}{c c}
-        \\
-        \smallinput{pic/gate_swap_up.tikz}
-        &
-        \smallinput{pic/gate_swap_down.tikz}
-        \\
-        \\
-        \multicolumn{2}{c}{
-            \smallinput{pic/wire_swap.tikz}
-        }
-        \\
+        \halfinput{ex/big_expanded.tikz} & \halfinput{ex/big_prio1.tikz} \\ \\
+        \halfinput{ex/big_prio2.tikz} & \halfinput{ex/big_prio3.tikz} \\ \\
+        \halfinput{ex/big_prio4.tikz} & \halfinput{ex/big_prio5.tikz} \\ \\
+        \halfinput{ex/big_prio6.tikz} & \halfinput{ex/big_prio7.tikz}
     \end{tabular}
+\end{center}
 
-    où $Y$ est une porte, $i, j$ sont les priorités des fils sortants et $p$ est la profondeur de la couche considérée.
+Pour éviter de surcharger le circuit, on ne garde pour chaque valeur que les annotations les plus à gauche, laissant les autres implicites.
 
-    Note: Pour la troisième règle, la position de la porte $Y$ par rapport aux fils considérés n'est pas importante, donc cette règle s'applique aussi si la porte $Y$ se trouve au dessus des fils de priorité $i$ et $j$
-\end{remark}
+\begin{center}
+    \input{ex/big_prio8.tikz}
+\end{center}
 
-\begin{remark}
-    Les règles 2 et 3 peuvent être remplacées par les 4 règles
+\subsection{Exemple: forme normale}
+\label{ann:nf}
 
-    \begin{tabular}{c c}
-        \\
-        \smallinput{pic/gate_exch1.tikz}
-        &
-        \smallinput{pic/gate_exch2.tikz}
-        \\
-        \\
-        \smallinput{pic/through_tobo1.tikz}
-        &
-        \smallinput{pic/through_tobo2.tikz}
-        \\
-    \end{tabular}
+En combinant les annotations de profondeur et de priorité sur l'exemple précédent, on obtient:
 
-    où les boîtes vides représentent des swaps ou des portes, et les boîtes nommés $X$ représentent des portes uniquement. De plus, $p_1$ et $p_2$ représentent ici les profondeurs des couches considérées.
+\begin{center}
+    \input{ex/big_prio_td.tikz}
+\end{center}
 
-\end{remark}
+La forme normale correspondant à ce circuit est donc:
 
-\begin{definition}
-    On pose le système de réécriture (formel) sur les circuits numérotés composé des 7 règles décrites ci-dessus, ainsi que des règles R14 à R22 des permutations (voir Figure 3)
-\end{definition}
+\begin{center}
+    \input{ex/big_nf.tikz}
+\end{center}
 
-\begin{remark}
-    Je n'ai pas démontré la terminaison du système formel, mais la terminaison du système intuitif donne une bonne indication que le système que j'ai ici décrit est effectivement terminant
-\end{remark}
+On remarque que les annotations de profondeur sur les portes ainsi que celles de priorité sur les fils restent inchangées.
 
-\section{Conclusion}
-
-Il reste sur le sujet plusieurs choses à faire, comme formaliser le système de réécriture en Isabelle, prouver sa terminaison et sa confluence, et enfin implémenter le certificat permettant de décider l'équivalence des $\prop{\Sigma}$.
-
-\section{Remerciments}
-
-Je voudrais remercier mon encadrante de stage (Sophie Tourret), les autres personnes travaillant sur le sujet pour leur indications et appréciations (Julie Cailler et Noé Delorme), toute l'équipe VERIDIS m'ayant accueilli au laboratoire, et le laboratoire LORIA.
-
-Je remercie aussi Grid5000 pour m'avoir permis de faire tourner mes tests de performance.
-
-
-\bibliographystyle{splncs04}
-\bibliography{ref}
-
-TODO papier original, papier quantique, papier bench, papier graphe
+Par contre, comme la normalisation peut créér, combiner et enlever des swaps, il n'en est pas de même pour la profondeur de ces derniers
 
 \end{document}

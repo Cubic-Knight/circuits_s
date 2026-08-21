@@ -4,7 +4,7 @@
 % \tikzstyle{NAME}=[PROPERTY LIST]
 
 % Node styles
-\tikzstyle{gate}=[fill=white, draw=black, shape=rectangle, minimum height=0.8cm, minimum width=0.8cm, inner sep=0.1em]
+\tikzstyle{gate}=[fill=white, draw=black, shape=rectangle, minimum height=0.7cm, minimum width=0.7cm, inner sep=0.1em]
 \tikzstyle{control}=[fill=black, draw=black, shape=circle, scale=0.38]
 \tikzstyle{not}=[shape=circle, path picture={ 
 \draw[black](path picture bounding box.north) -- (path picture bounding box.south) (path picture bounding box.west) -- (path picture bounding box.east);
@@ -18,7 +18,7 @@
 \tikzstyle{globalphase}=[fill=white, draw=black, inner sep=0.15em, shape=rounded rectangle, minimum height=0.4cm]
 \tikzstyle{ancilla}=[fill=black, draw=black, shape=rectangle, minimum width=0.01cm, minimum height=0.25cm, inner sep=0.01em]
 \tikzstyle{ground}=[fill=white, path picture={\draw[black](-1.5mm,0)--(-0.6mm,0);\draw[black,thick](-0.6mm,-1.75mm)--(-0.6mm,1.75mm) (0mm,-0.9mm)--(0mm,0.9mm) (0.6mm,-0.5mm)--(0.6mm,0.5mm);}, minimum width=0.1mm, draw=none, outer sep=0pt]
-\tikzstyle{gate22}=[fill={rgb,255: red,220; green,220; blue,220}, draw=black, shape=rectangle, minimum height=.68cm, minimum width=0.6cm]
+\tikzstyle{gate22}=[fill=white, draw=black, shape=rectangle, minimum height=1.7cm, minimum width=0.7cm]
 \tikzstyle{void}=[shape=rectangle, minimum height=0.5cm]
 \tikzstyle{gate44}=[fill={rgb,255: red,220; green,220; blue,220}, draw=black, shape=rectangle, minimum height=1.43cm, minimum width=0.5cm]
 \tikzstyle{divider}=[fill={rgb,255: red,220; green,220; blue,220}, draw=black, shape border rotate=90, regular polygon, regular polygon sides=3, inner sep=1.5pt, rounded corners=0.5mm]
